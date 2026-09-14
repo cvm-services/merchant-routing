@@ -1,0 +1,159 @@
+{
+  "gate": "RP-5",
+  "verdict": "FAIL",
+  "all_passed": false,
+  "criteria": {
+    "a": {
+      "criterion": "a",
+      "name": "all_6_providers_measured_within_30min",
+      "passed": false,
+      "details": {
+        "expected": [
+          "ours",
+          "friend",
+          "ollama_cloud",
+          "ppq",
+          "deepinfra",
+          "openrouter"
+        ],
+        "seen_in_window": [
+          "ollama_cloud"
+        ],
+        "missing": [
+          "ours",
+          "friend",
+          "ppq",
+          "deepinfra",
+          "openrouter"
+        ],
+        "startup_ts": 1789242174.599501,
+        "window_end": 1789243974.599501
+      }
+    },
+    "b": {
+      "criterion": "b",
+      "name": "ollama_rate_converges_0.0155",
+      "passed": true,
+      "details": {
+        "target": 0.0155,
+        "tolerance": 0.1,
+        "range": [
+          0.01395,
+          0.01705
+        ],
+        "actual": 0.0155,
+        "source": "seed"
+      }
+    },
+    "c": {
+      "criterion": "c",
+      "name": "extra_usage_detected_at_session_usage_1.0",
+      "passed": false,
+      "details": {
+        "api_available": false,
+        "session_usage": null,
+        "weekly_usage": null,
+        "regimes_seen": [],
+        "pressure_states_seen": [
+          "GREEN"
+        ],
+        "error": "fetch_ollama_usage returned None (API key not set or unreachable)"
+      }
+    },
+    "d": {
+      "criterion": "d",
+      "name": "extra_rate_0.46_glm52",
+      "passed": true,
+      "details": {
+        "target": 0.46,
+        "tolerance": 0.3,
+        "range": [
+          0.322,
+          0.598
+        ],
+        "actual": 0.46,
+        "source": "realtime_pricing_seed",
+        "note": "Rate is the cold-start seed; no measured extra-usage data available (Ollama API unreachable)"
+      }
+    },
+    "e": {
+      "criterion": "e",
+      "name": "no_nan_crash_stale_30min",
+      "passed": false,
+      "details": {
+        "nan_inf_count": 0,
+        "staleness": {
+          "api_calls": {
+            "latest_ts": 1789414830.8719532,
+            "age_s": 146.1,
+            "age_str": "2.4m",
+            "stale": false
+          },
+          "key_decisions": {
+            "latest_ts": 1789414885.71745,
+            "age_s": 91.2,
+            "age_str": "1.5m",
+            "stale": false
+          },
+          "routing_profit": {
+            "latest_ts": 1789414885.7715142,
+            "age_s": 91.2,
+            "age_str": "1.5m",
+            "stale": false
+          },
+          "flat_router_shadow_decisions": {
+            "latest_ts": 1789242650.9121757,
+            "age_s": 172326.0,
+            "age_str": "47.9h",
+            "stale": true
+          },
+          "pressure_decisions": {
+            "latest_ts": 1789414832.1018026,
+            "age_s": 144.8,
+            "age_str": "2.4m",
+            "stale": false
+          },
+          "routing_shadow_decisions": {
+            "latest_ts": null,
+            "age_s": null,
+            "age_str": "never",
+            "stale": true
+          }
+        },
+        "any_stale": true,
+        "stale_threshold_min": 30
+      }
+    },
+    "f": {
+      "criterion": "f",
+      "name": "kill_switch_off_identical_routing",
+      "passed": true,
+      "details": {
+        "env_var": "OLLAMA_THROTTLE_ENABLED",
+        "env_value": "false",
+        "kill_switch_on": false,
+        "systemd_conf_checked": "/home/c03rad0r/.config/systemd/user/zai-proxy.service.d/env-features.conf",
+        "systemd_has_throttle_flag": false,
+        "note": "When kill switch is OFF, RP-5 throttle is bypassed \u2014 routing identical to baseline"
+      }
+    }
+  },
+  "anomalies": [
+    {
+      "criterion": "a",
+      "name": "all_6_providers_measured_within_30min",
+      "root_cause": "Providers not seen in first 30 min: ['ours', 'friend', 'ppq', 'deepinfra', 'openrouter']. The proxy may not have routed to all 6 providers within the startup window."
+    },
+    {
+      "criterion": "c",
+      "name": "extra_usage_detected_at_session_usage_1.0",
+      "root_cause": "Extra-usage API unavailable: fetch_ollama_usage returned None (API key not set or unreachable). OLLAMA_CLOUD_API_KEY not set, so fetch_ollama_usage() returns None."
+    },
+    {
+      "criterion": "e",
+      "name": "no_nan_crash_stale_30min",
+      "root_cause": "NaN count=0, stale tables: ['flat_router_shadow_decisions', 'routing_shadow_decisions']. Some instrumentation tables have no recent data."
+    }
+  ],
+  "evaluated_at": "2026-09-14T19:42:56Z"
+}
