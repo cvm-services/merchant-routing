@@ -1,32 +1,35 @@
 # Offload review — routstr delist, task items 4–5 (atomicity/idempotence, SLA)
 
 Worker: fleet offload (merchant-routing workspace). Scope: the original review
-task's items 4 (atomicity + idempotence) and 5 (5-minute SLA arithmetic),
-performed fresh against the artifacts, evidence re-derived (grep/read/diff),
-not copied from the Gate 2.5 review.
+task's items 4 (atomicity + idempotence) and 5 (5-minute SLA arithmetic).
+This is a second independent pass (re-dispatch, 2026-09-17): every claim below
+was re-derived against the artifacts in this session (read end-to-end,
+grep/diff, live state file, test-suite run) — not copied from the Gate 2.5
+review nor from the first pass. Where this pass adds evidence beyond the first
+pass it is marked **[new this pass]**.
 
 ## Artifact-path status (required report per task instructions)
 
 - `~/.hermes/bot/docs/routstr_delist_contract.md` — **MISSING — HIGH**.
-  `~/.hermes/bot/docs/` exists but contains only `reviews/` (verified by
-  `ls -la`); no file matching `*contract*` exists anywhere under `~/.hermes/bot`
-  (file search: only unrelated `routstr-readiness-check.sh` / `routstr_probe.py`
-  / `routstr-pnl-collect.py` ops scripts in fleet_lkg snapshots). Reviewed the
-  repo counterpart `docs/routstr-delist.md` (129 lines) as the contract
-  stand-in — it is the document the script itself cites at
-  routstr_delist.py:21.
+  No file matching `*contract*` exists anywhere under `~/.hermes/bot`
+  (file search over the whole tree: only unrelated ops scripts in fleet_lkg
+  snapshots). Reviewed the repo counterpart `docs/routstr-delist.md`
+  (129 lines) as the contract stand-in — it is the document the script itself
+  cites at routstr_delist.py:21.
 - `~/.hermes/bot/tests/test_routstr_delist.py` — **MISSING — HIGH**. No
-  `tests/` directory exists in `~/.hermes/bot` at all (verified by `ls`).
-  Reviewed the repo counterpart `tests/test_routstr_delist.py` (546 lines,
-  55 tests) instead.
+  `tests/` directory exists in `~/.hermes/bot` at all. Reviewed the repo
+  counterpart `tests/test_routstr_delist.py` (546 lines, 55 tests) instead.
 - `~/.hermes/bot/scripts/routstr_delist.py` — present (602 lines), verified
-  byte-identical to repo `src/routstr_delist.py` (`diff -q`: no output,
-  exit 0). All line references below therefore apply to both copies.
+  byte-identical to repo `src/routstr_delist.py` (`diff`: clean, exit 0).
+  All line references below therefore apply to both copies.
 
 Reference conventions: `routstr_delist.py:N` = the script (both copies);
 `tests:N` = repo `tests/test_routstr_delist.py`; `docs:N` = repo
 `docs/routstr-delist.md`. Additional live evidence read (not modified): the
 deployed state file `~/.hermes/bot/routstr_delist_state.json`.
+
+Suite evidence (this pass): `python3 -m pytest tests/test_routstr_delist.py -q`
+→ **55 passed in 0.32s** (hermetic).
 
 No artifacts were modified by this review.
 
@@ -43,8 +46,8 @@ No artifacts were modified by this review.
   truncated/partial file. The failure is silent because `load_state()` never
   raises and returns `{}` on any parse failure (routstr_delist.py:194-201).
   A torn state file is therefore read as *no state*: `--status` would report
-  `delisted: false` (routstr_delist.py:474-479 defaults via `state.get`), and
-  per the design's flag mechanism (docs:79-80; `update_state` docstring
+  `delisted: false` (routstr_delist.py:473-480, defaults via `state.get`),
+  and per the design's flag mechanism (docs:79-80; `update_state` docstring
   routstr_delist.py:215-230) a listing publisher reading the flag would
   advertise `delisted=false` while the remote listing is actually pulled —
   exactly the state/reality divergence that atomicity exists to prevent.
@@ -53,16 +56,30 @@ No artifacts were modified by this review.
   `main()` (routstr_delist.py:497, 504, 520, 535, 544). A manual `--relist`
   racing a cron delist tick is last-writer-wins with no ordering guarantee
   between the local `delisted` flag and the remote `models` table.
+- **[new this pass]** The persistence result is never checked:
+  `save_state()` returns True/False (routstr_delist.py:210, 212) but all five
+  call sites invoke it as a bare statement and ignore the boolean
+  (routstr_delist.py:497, 504, 520, 535, 544). A failed persist (disk full,
+  permissions, missing parent dir) is silent. Worked consequence: remote
+  delist succeeds (pull returns `ok`), then the state write fails — the run
+  still prints `action: delist`, exits 0 (routstr_delist.py:552-555), and the
+  durable `delisted` flag stays `false`, so the listing publisher never
+  reflects the pull; the mirrored case after a successful remote `--relist`
+  leaves `delisted: true` stuck. Same divergence class as the torn write,
+  reachable without any crash.
 - The remote side IS atomic: each SSH payload uses one sqlite connection, a
   single UPDATE, and one commit (pull routstr_delist.py:329-340; relist
   routstr_delist.py:343-362), and the pull captures the advertised names
   before disabling them on the same connection (routstr_delist.py:336-339).
   The non-atomic component is the local state write.
-- Test coverage: none. The closest test covers an unreadable *input feed*
-  (tests:392-407), not a torn *state* file and not concurrent runs.
+- Test coverage: none. The closest tests cover an unreadable *input feed*
+  (tests:392-407) and the read side of corrupt state (tests:219-224) — not a
+  torn *state* file, not a failed state write, not concurrent runs.
 
 Must-fix: write to a temp file in the same directory, fsync, then
-`os.replace` (atomic on POSIX); guard load/modify/save with flock.
+`os.replace` (atomic on POSIX); guard load/modify/save with flock; treat a
+False `save_state()` as a run failure (exit non-zero) so flag divergence is
+surfaced, not silent.
 
 ### 4b. Idempotence — a repeat delist is NOT a no-op — **HIGH**
 
@@ -87,11 +104,15 @@ Must-fix: write to a temp file in the same directory, fsync, then
   docs:23-27 ("never rows the operator had disabled before the delist") and
   the script docstring routstr_delist.py:34-37 ("the relist re-enables only
   those").
+- **[new this pass]** Repeat `--relist` is not idempotent either: a successful
+  relist pops `pulled_models` (routstr_delist.py:503), so a second
+  `--relist` (operator retry, or a monitoring loop) reads `[]` and takes the
+  blanket-enable path described above.
 - Live evidence (not hypothetical): the deployed state file
   `~/.hermes/bot/routstr_delist_state.json` currently reads
   `{"delisted": true, "last_reason": "manual override", "snapshot": {},
-  "ts": 1788883877.3967388}` — no `pulled_models` key — so a `--relist` from
-  the current live state takes the blanket path today.
+  "ts": 1788883877.3967388}` — no `pulled_models` key (mtime Sep 8) — so a
+  `--relist` from the current live state takes the blanket path today.
 - Why the suite misses it: no test runs two consecutive delists. The
   scoped-relist round-trip (tests:412-428) pulls once and then relists with
   no second delist in between; `FakeBackend`'s default `pull_res` always
@@ -103,11 +124,11 @@ Must-fix: write to a temp file in the same directory, fsync, then
 Must-fix: on a successful re-delist, overwrite `pulled_models` only when the
 capture is non-empty (or merge with the stored set); make an empty-names
 `--relist` refuse or require an explicit opt-in flag rather than
-blanket-enabling; add a double-delist regression test.
+blanket-enabling; add double-delist and double-relist regression tests.
 
 **Verdict: HIGH** — both required properties (atomic state writes; idempotent
-re-runs) are absent, and the idempotence hole is reachable from the current
-live state file.
+re-runs) are absent, the idempotence hole is reachable from the current live
+state file, and persistence failures are silently ignored.
 
 ## Finding 5 — 5-minute SLA arithmetic — **HIGH (does not hold as documented)**
 
@@ -132,7 +153,8 @@ The numbers, per the original task's required breakdown:
 - **Action round-trip bound**: `subprocess.run(..., timeout=60)` at
   routstr_delist.py:582 — the ONLY bound (`build_ssh_docker_cmd`,
   routstr_delist.py:365-376, sets no ssh `ConnectTimeout`/`BatchMode`
-  options). Typical ssh + docker exec ≈ 1-3 s; worst case 60 s
+  options; grep for `ConnectTimeout|BatchMode|-o ` over the module: zero
+  hits). Typical ssh + docker exec ≈ 1-3 s; worst case 60 s
   (TimeoutExpired caught at routstr_delist.py:597, reported `ok: False`).
   The optional nak publish (timeout=30, routstr_delist.py:410) runs after
   the pull on the success path (routstr_delist.py:547-548), so it does not
@@ -154,8 +176,9 @@ the window (it is consumed only by the module docstring routstr_delist.py:5,
 the contract docs:59, and the tests). The two SLA-adjacent tests pin nothing
 behavioural: tests:329-330 asserts the constant equals the literal 300
 (tautological), and tests:332-344 measures the wall-clock of a `--dry-run`
-run — which proves only that the script does not sleep, nothing about
-cadence or the ssh bound.
+run — whose backend path performs no subprocess at all
+(routstr_delist.py:578-580) — proving only that the script does not sleep,
+nothing about cadence or the ssh bound.
 
 **Verdict: HIGH** — the ≤5-minute SLA does NOT hold under the documented
 `*/5` cadence (worst case 360 s, expected ~302 s) and is enforced nowhere. It
@@ -170,4 +193,8 @@ bounded in-run retry plus a shorter ssh timeout; in all cases wire
 Reviewer note: `~/.hermes/bot` is not a git repository (verified), so the
 required local commit of this review lands in the workspace repo
 (merchant-routing) at `docs/reviews/findings_4_5.md`, with this identical copy
-at the task-mandated bot path.
+at the task-mandated bot path. Provenance: the first offload pass (repo
+commit 6736d22) reached the same two HIGH verdicts; this second pass
+re-derived every claim independently, confirmed all of them, and added the
+two marked sub-findings (4a unchecked save_state returns; 4b repeat-relist
+blanket path).
