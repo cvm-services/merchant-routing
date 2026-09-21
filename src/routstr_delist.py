@@ -60,7 +60,22 @@ import time
 EXHAUST_MOVE_HOURS = 2.0       # predicted exhaustion moved forward by >= this many
                                # hours -> burn-acceleration trigger (default)
 VARIANCE_THRESHOLD = 0.30      # Kalman `uncertainty` above this -> variance trigger
-TRIGGER_ACTION_WINDOW_S = 300  # 5 minutes: script must pull within this of a trigger
+
+# 5-minute SLA arithmetic (cold-review finding 5 — these are now wired, not
+# decorative): worst-case detection is one full poll cadence (cron */4 =
+# POLL_CADENCE_S), and the in-run action must fit the remaining budget.
+#   POLL_CADENCE_S + ACTION_BUDGET_S == TRIGGER_ACTION_WINDOW_S (== 300 s)
+# The action budget is enforced as a real monotonic deadline inside main():
+# every remote round-trip is timeout-clamped to the remaining budget, so a
+# run can never spend more than ACTION_BUDGET_S acting.
+TRIGGER_ACTION_WINDOW_S = 300  # 5 minutes: pull must happen within this of a trigger
+POLL_CADENCE_S = 240           # documented cron cadence: */4 minutes
+ACTION_BUDGET_S = TRIGGER_ACTION_WINDOW_S - POLL_CADENCE_S   # 60 s
+SSH_TIMEOUT_S = 30             # per round-trip; pull + verify = 2*30 <= budget
+MAX_PULL_ATTEMPTS = 2          # initial + one bounded in-run retry
+
+BREAKER_THRESHOLD = 3          # task body: 3 consecutive failed runs -> BLOCKED
+STALENESS_S = 1800             # --preds feed older than 30 min is dead data
 DELIST_EVENT_KIND = 30078      # NIP-78 application data (parametrized replaceable)
                                # — NOT a squatted registered 303xx live-event kind
 DELIST_EVENT_TAG = "routstr-delist"
@@ -132,7 +147,9 @@ def variance_jumped(preds, *, threshold=VARIANCE_THRESHOLD, key=None):
         if key is not None and p.get("key") != key:
             continue
         unc = p.get("uncertainty")
-        if unc is None:
+        # type-guarded like exhausts_in_hours (cold-review should-fix):
+        # bool is an int subclass — excluded explicitly.
+        if not isinstance(unc, (int, float)) or isinstance(unc, bool):
             continue
         if unc > threshold:
             fired.append({
@@ -202,14 +219,30 @@ def load_state(path):
 
 
 def save_state(path, state):
-    """Persist state dict; returns True on success, False on any error."""
+    """Persist state dict ATOMICALLY (cold-review finding 4): tmp file in the
+    same directory + fsync + os.replace, so a concurrent reader never
+    observes a torn/partial file and a crash mid-write leaves the previous
+    state fully intact. Returns True on success, False on any error."""
+    tmp = None
     try:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w", encoding="utf-8") as fh:
+        d = os.path.dirname(path) or "."
+        os.makedirs(d, exist_ok=True)
+        tmp = os.path.join(d, f".{os.path.basename(path)}.{os.getpid()}.tmp")
+        with open(tmp, "w", encoding="utf-8") as fh:
             json.dump(state, fh, indent=2, sort_keys=True)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, path)
+        tmp = None
         return True
     except Exception:
         return False
+    finally:
+        if tmp is not None:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
 
 
 def update_state(state, *, ts, preds, delisted, last_reason=None, extra=None):
@@ -288,25 +321,27 @@ def evaluate_triggers(preds_now, prev_state, *, override=False,
 
 
 # ── Listing action (backend-injected; provider stays in ladder) ───────────
-def pull_listing(backend, *, dry_run=False):
+def pull_listing(backend, *, dry_run=False, deadline=None):
     """Pull the routstr SALE listing on the sell node.
 
     Delegates to `backend` so the remote/SSH path is swappable in tests.
     `backend` must expose pull(**kw) and (for dry-run) dry_run_pull(**kw).
+    `deadline` is a monotonic clock deadline for the SLA budget.
 
     Returns backend result dict.
     """
     if dry_run and hasattr(backend, "dry_run_pull"):
         return backend.dry_run_pull(dry_run=True)
-    return backend.pull(dry_run=dry_run)
+    return backend.pull(dry_run=dry_run, deadline=deadline)
 
 
-def relist(backend, *, names=None, dry_run=False):
+def relist(backend, *, names=None, dry_run=False, deadline=None):
     """Restore the routstr SALE listing on the sell node (scoped to the
     model names captured by the pull when known)."""
     if dry_run and hasattr(backend, "dry_run_relist"):
         return backend.dry_run_relist(names=names or [], dry_run=True)
-    return backend.relist(names=names or [], dry_run=dry_run)
+    return backend.relist(names=names or [], dry_run=dry_run,
+                          deadline=deadline)
 
 
 # ── SQL / command shaping (hermetic — no network) ─────────────────────────
@@ -359,6 +394,20 @@ def relist_payload(names):
         f"c=db.execute('UPDATE models SET enabled=1 WHERE name IN ({placeholders})',{names!r});"
         "db.commit();"
         "print(json.dumps({'ok':True,'restored':c.rowcount}))"
+    )
+
+
+def verify_pull_payload():
+    """python -c payload for the post-pull RE-FETCH (cold-review finding 2):
+    an independent read-only round-trip counting still-advertised models.
+    Success of a delist is gated on this count being 0 — never on the pull
+    round-trip's own self-report. Read-only: SELECT only, never mutates."""
+    return (
+        "import sqlite3,json;"
+        "db=sqlite3.connect('/app/data/keys.db');"
+        "n=db.execute('SELECT COUNT(*) FROM models WHERE enabled=1')"
+        ".fetchone()[0];"
+        "print(json.dumps({'ok':True,'count':n}))"
     )
 
 
@@ -433,6 +482,20 @@ def _read_preds(pred_input):
         return []
 
 
+def feed_is_stale(pred_input, *, max_age_s=STALENESS_S, now=None):
+    """True when the --preds file is older than max_age_s (mtime-based).
+
+    Fail-safe direction (cold-review finding 3, HIGH): a feed whose age
+    cannot be determined is treated as STALE — dead data must never drive a
+    delist. Returns False only for a file that provably is fresh."""
+    try:
+        age = (now if now is not None else time.time()) - \
+            os.path.getmtime(pred_input)
+        return not (0 <= age <= max_age_s)
+    except OSError:
+        return True
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="routstr_delist.py",
@@ -447,6 +510,9 @@ def main(argv=None):
     ap.add_argument("--preds", default=None,
                     help="path to a JSON list of current predictions "
                          "(omit to run with no live baseline)")
+    ap.add_argument("--preds-key", default=None,
+                    help="only evaluate predictions with this `key` (scopes "
+                         "triggers to the routstr-relevant feed entries)")
     ap.add_argument("--move-hours", type=float, default=EXHAUST_MOVE_HOURS,
                     help="exhaustion must move forward by this many hours to fire")
     ap.add_argument("--variance", type=float, default=VARIANCE_THRESHOLD,
@@ -456,11 +522,17 @@ def main(argv=None):
     ap.add_argument("--delist", action="store_true",
                     help="force-pull the listing now (ignore triggers)")
     ap.add_argument("--relist", action="store_true",
-                    help="restore the listing")
+                    help="restore the listing (scoped to the pulled names)")
+    ap.add_argument("--relist-any", action="store_true",
+                    help="EXPLICIT opt-in: allow the blanket relist when no "
+                         "pulled names are stored (enables every model row)")
+    ap.add_argument("--unblock", action="store_true",
+                    help="clear a BLOCKED circuit breaker and proceed")
     ap.add_argument("--status", action="store_true",
                     help="print current delist state and exit")
     ap.add_argument("--dry-run", action="store_true",
-                    help="do not execute the remote delist (print intent)")
+                    help="do not execute the remote delist (print intent; "
+                         "flips no durable delist flag, publishes nothing)")
     ap.add_argument("--ssh-target", default=_DEFAULT_SSH_TARGET)
     ap.add_argument("--container", default=_DEFAULT_CONTAINER)
     ap.add_argument("--nsec", default=None,
@@ -469,28 +541,88 @@ def main(argv=None):
     args = ap.parse_args(argv)
 
     state = load_state(args.state)
+    fails = state.get("consecutive_failures", 0)
+    fails = fails if isinstance(fails, int) else 0
+    blocked = bool(state.get("blocked"))
 
     if args.status:
         print(json.dumps({"delisted": state.get("delisted", False),
                           "ts": state.get("ts"),
                           "last_reason": state.get("last_reason"),
                           "pulled_models": state.get("pulled_models", []),
-                          "snapshot_windows": len(state.get("snapshot", {}))},
+                          "snapshot_windows": len(state.get("snapshot", {})),
+                          "consecutive_failures": fails,
+                          "blocked": blocked},
                          indent=2, sort_keys=True))
         return 0
 
+    # Circuit breaker (task body: 3x fail -> BLOCKED). --unblock is the
+    # operator's explicit clear; it lets the same run proceed.
+    if args.unblock and blocked:
+        state.pop("blocked", None)
+        state.pop("consecutive_failures", None)
+        state["ts"] = time.time()
+        save_state(args.state, state)
+        blocked = False
+        fails = 0
+
+    if blocked:
+        # Attempt 4 never runs: every remote action is refused (relist and
+        # delist alike) until the operator clears the breaker.
+        print(json.dumps({"action": "blocked", "ok": False, "blocked": True,
+                          "consecutive_failures": fails,
+                          "reason": "circuit breaker open after "
+                                    f"{BREAKER_THRESHOLD} consecutive failed "
+                                    "runs; re-run with --unblock to clear",
+                          "ts": time.time()}, indent=2, sort_keys=True))
+        return 3
+
     override = args.manual or manual_override(args.override)
-    preds = _read_preds(args.preds)
+    raw_preds = _read_preds(args.preds)
     # An explicitly requested feed that yields nothing is a FEED ERROR: keep
     # going (manual override must still work) but never treat it as "quiet"
     # (cold-review finding 3).
-    preds_error = bool(args.preds) and not preds
+    preds_error = bool(args.preds) and not raw_preds
+    # Freshness guard (cold-review finding 3, HIGH): a stale feed is dead
+    # data — it must never trigger (level-based variance especially) and
+    # must never refresh the acceleration baseline.
+    preds_stale = bool(args.preds) and bool(raw_preds) and \
+        feed_is_stale(args.preds)
+    if preds_stale:
+        raw_preds = []
+    preds = raw_preds
+    if args.preds_key:
+        # Scope triggers to the routstr-relevant entries (review finding 3):
+        # another provider's variance spike must not pull the routstr SALE.
+        preds = [p for p in raw_preds if p.get("key") == args.preds_key]
 
     # Re-enable: --relist overrides everything.
     if args.relist:
         names = state.get("pulled_models") or []
+        if not names and not args.relist_any:
+            # Blanket relist REFUSED (cold-review finding 4): without the
+            # captured name set, `UPDATE models SET enabled=1` would enable
+            # rows the operator had deliberately disabled before the delist.
+            print(json.dumps({"action": "relist_refused", "ok": False,
+                              "reason": "no pulled_models captured; pass "
+                                        "--relist-any to force the blanket "
+                                        "relist",
+                              "ts": time.time()}, indent=2, sort_keys=True))
+            return 1
+        deadline = time.monotonic() + ACTION_BUDGET_S
         res = relist(_SshBackend(args.ssh_target, args.container),
-                     names=names, dry_run=args.dry_run)
+                     names=names, dry_run=args.dry_run, deadline=deadline)
+        if args.dry_run:
+            # Intent only (purity): flip no durable flag, publish no event.
+            state = dict(state)
+            state["ts"] = time.time()
+            state["last_dry_run"] = {"ts": state["ts"], "action": "relist",
+                                     "ok": bool(res.get("ok")),
+                                     "names": names}
+            save_state(args.state, state)
+            print(json.dumps({**res, "action": "relist"}, indent=2,
+                             sort_keys=True))
+            return 0 if res.get("ok") else 1
         if not res.get("ok"):
             state["ts"] = time.time()
             state["last_pull_error"] = {"action": "relist", "res": res}
@@ -501,6 +633,8 @@ def main(argv=None):
         state = update_state(state, ts=time.time(), preds=preds,
                              delisted=False, last_reason="relist")
         state.pop("pulled_models", None)
+        state["consecutive_failures"] = 0        # explicit action clears breaker
+        state["blocked"] = False                 # keep the key greppable
         save_state(args.state, state)
         if args.nsec:
             publish_delist_event(args.nsec, delisted=False)
@@ -518,29 +652,103 @@ def main(argv=None):
         state = update_state(state, ts=time.time(), preds=preds,
                              delisted=state.get("delisted", False))
         save_state(args.state, state)
-        print(json.dumps({"action": "none", "fire": False, "preds_error": preds_error,
+        print(json.dumps({"action": "none", "fire": False,
+                          "preds_error": preds_error,
+                          "preds_stale": preds_stale,
                           "reasons": [], "ts": time.time()}, indent=2,
                          sort_keys=True))
-        return 1 if preds_error else 0
+        return 1 if (preds_error or preds_stale) else 0
 
-    # Fire: pull the listing.
-    res = pull_listing(_SshBackend(args.ssh_target, args.container),
-                       dry_run=args.dry_run)
-    if not res.get("ok"):
+    # Fire: pull the listing, then CONFIRM by an independent re-fetch
+    # (cold-review finding 2) within the action budget (finding 5). One
+    # bounded in-run retry absorbs a transient ssh blip; the whole loop —
+    # both attempts — counts as a single run for the circuit breaker.
+    backend = _SshBackend(args.ssh_target, args.container)
+    deadline = time.monotonic() + ACTION_BUDGET_S
+    res: dict = {"ok": False}
+    confirmed = False
+    attempts = 0
+    while attempts < MAX_PULL_ATTEMPTS:
+        attempts += 1
+        res = pull_listing(backend, dry_run=args.dry_run, deadline=deadline)
+        if not res.get("ok"):
+            if not args.dry_run and attempts < MAX_PULL_ATTEMPTS and \
+                    time.monotonic() < deadline:
+                continue                       # bounded in-run retry
+            break
+        if args.dry_run:
+            confirmed = True                   # intent only: no remote verify
+            break
+        vres = backend.verify(deadline=deadline)
+        if vres.get("ok") is True and vres.get("count") == 0:
+            # RE-FETCHED confirmation: zero models still advertised.
+            res["confirmed"] = True
+            res["verified_count"] = vres.get("count")
+            confirmed = True
+            break
+        # Pull self-reported ok but the re-fetch refuted it (or failed):
+        # the attempt is a failure no matter what the pull round-trip said.
+        res = dict(res)
+        res["ok"] = False
+        res["confirmed"] = False
+        res["verify"] = {k: vres.get(k) for k in ("ok", "count", "error", "rc")}
+        if attempts < MAX_PULL_ATTEMPTS and time.monotonic() < deadline:
+            continue                           # bounded in-run retry
+        break
+
+    if args.dry_run:
+        # Dry-run is intent-only (verification-pass finding 7c): record the
+        # intent, flip NO durable delist flag, publish NO event, count NO
+        # breaker failure, consume NO acceleration baseline.
+        state = dict(state)
+        state["ts"] = time.time()
+        state["last_dry_run"] = {"ts": state["ts"],
+                                 "action": "delist" if confirmed
+                                           else "delist_failed",
+                                 "ok": bool(res.get("ok")),
+                                 "reasons": dec["reasons"]}
+        save_state(args.state, state)
+        print(json.dumps({**res, "action": "delist" if confirmed
+                                           else "delist_failed",
+                          "fire": True, "preds_error": preds_error,
+                          "preds_stale": preds_stale,
+                          "reasons": dec["reasons"]}, indent=2,
+                         sort_keys=True))
+        return 0 if confirmed else 1
+
+    if not confirmed:
         # FAILED pull: do NOT consume the acceleration baseline (the trigger
         # must re-fire next run), do NOT set delisted=true, exit non-zero so
-        # cron/monitoring sees the failure (cold-review finding 2).
+        # cron/monitoring sees the failure (cold-review finding 2). The
+        # circuit breaker counts consecutive failed RUNS (task body).
+        fails += 1
         state["ts"] = time.time()
-        state["last_pull_error"] = {"action": "delist", "res": res}
+        state["delisted"] = False                # keep the key greppable
+        state["consecutive_failures"] = fails
+        state["last_pull_error"] = {"action": "delist",
+                                    "ts": state["ts"], "res": res}
+        newly_blocked = fails >= BREAKER_THRESHOLD
+        state["blocked"] = newly_blocked
         save_state(args.state, state)
         print(json.dumps({**res, "action": "delist_failed", "fire": True,
                           "preds_error": preds_error,
-                          "reasons": dec["reasons"]}, indent=2, sort_keys=True))
-        return 1
+                          "preds_stale": preds_stale,
+                          "reasons": dec["reasons"],
+                          "consecutive_failures": fails,
+                          "blocked": newly_blocked}, indent=2, sort_keys=True))
+        return 3 if newly_blocked else 1
 
+    # Confirmed delist: merge the captured names with any prior capture
+    # (cold-review finding 4 — a re-delist's now-empty capture must never
+    # clobber the stored names) and reset the breaker on success.
+    prior = state.get("pulled_models") or []
+    pulled = res.get("pulled") or []
+    merged = list(prior) + [n for n in pulled if n not in prior]
     state = update_state(state, ts=time.time(), preds=preds, delisted=True,
                          last_reason="; ".join(dec["reasons"] or ["--delist"]),
-                         extra={"pulled_models": res.get("pulled", [])})
+                         extra={"pulled_models": merged})
+    state["consecutive_failures"] = 0
+    state["blocked"] = False                     # keep the key greppable
     save_state(args.state, state)
 
     # Event-based delist signal (best-effort, never blocks the pull result).
@@ -551,6 +759,7 @@ def main(argv=None):
     # field which must not clobber the top-level delist action.
     print(json.dumps({**res, "action": "delist", "fire": True,
                       "preds_error": preds_error,
+                      "preds_stale": preds_stale,
                       "reasons": dec["reasons"]}, indent=2, sort_keys=True))
     return 0
 
@@ -560,26 +769,44 @@ class _SshBackend:
 
     Only ever mutates the `models` table (the advertised listing). Never
     touches upstream_providers — the provider stays in the ladder.
+
+    Every remote round-trip is bounded by min(SSH_TIMEOUT_S, remaining
+    action-budget deadline) so a fired trigger can never exceed the
+    5-minute window's action slice (cold-review finding 5).
     """
 
     def __init__(self, ssh_target, container):
         self.ssh_target = ssh_target
         self.container = container
 
-    def pull(self, dry_run=False):
-        return self._run(pull_listing_payload(), dry_run=dry_run, action="pull")
+    def pull(self, dry_run=False, deadline=None):
+        return self._run(pull_listing_payload(), dry_run=dry_run,
+                        action="pull", deadline=deadline)
 
-    def relist(self, names=None, dry_run=False):
+    def relist(self, names=None, dry_run=False, deadline=None):
         return self._run(relist_payload(names or []), dry_run=dry_run,
-                         action="relist")
+                         action="relist", deadline=deadline)
 
-    def _run(self, payload, *, dry_run, action):
+    def verify(self, dry_run=False, deadline=None):
+        """Independent post-pull RE-FETCH (cold-review finding 2)."""
+        return self._run(verify_pull_payload(), dry_run=dry_run,
+                         action="verify", deadline=deadline)
+
+    def _run(self, payload, *, dry_run, action, deadline=None):
         cmd = build_ssh_docker_cmd(self.ssh_target, self.container, payload)
         if dry_run:
             return {"ok": True, "dry_run": True, "action": action,
                     "cmd": " ".join(cmd[:2]) + " … " + cmd[2][:120]}
+        timeout = SSH_TIMEOUT_S
+        if deadline is not None:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return {"ok": False, "action": action,
+                        "error": "action budget exhausted"}
+            timeout = min(SSH_TIMEOUT_S, remaining)
         try:
-            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            proc = subprocess.run(cmd, capture_output=True, text=True,
+                                  timeout=timeout)
             data = {}
             out = proc.stdout.strip()
             if out:
