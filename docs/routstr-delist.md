@@ -174,6 +174,20 @@ flip), SLA deadline arithmetic + bounded in-run retry, real `_SshBackend._run`
 parsing (mocked subprocess), event argv shape (`--env-sec`, kind 30078), and
 full CLI paths.
 
+`tests/test_routstr_delist_contract.py` is the TDD contract suite (25 pytest
+cases, one class per required case in the offload task body: quiet run,
+acceleration + second-listings-fetch verification, variance jump, manual
+override, debounce within the window, ladder byte-identity semantic guard,
+idempotency, SLA fake-clock window, 3-strike breaker with BLOCKED marker,
+atomic-write crash safety, secret hygiene). Its routstr-API mock is a
+`FakeSellNode`: a named shared-cache in-memory sqlite that EXECUTES the real
+pull/verify/relist payloads and observes actual SQL effects on the `models`
+vs `upstream_providers` tables (no subprocess, no network, no file-sqlite —
+file-backed sqlite/fsync can stall indefinitely on sandboxed fleet hosts).
+Deployed copies, byte-identical: `~/.hermes/bot/tests/test_routstr_delist.py`
+runs against the deployed `~/.hermes/bot/scripts/routstr_delist.py` via the
+`../scripts` loader fallback.
+
 ## Dependencies
 
 - **T-A** (caller-class capture): the sold-429 gate and `predict_exhaustion`
