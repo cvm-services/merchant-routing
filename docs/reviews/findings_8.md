@@ -1,192 +1,213 @@
 # Offload review — routstr delist, finding 8 (test rigour)
 
-Second independent analysis pass for finding 8 (2026-09-17, late). Scope:
-original task item 8 — test rigour: would the existing tests catch a broken
-implementation, and what do they fail to pin? Nothing below is carried over
-from the first pass unverified: this session re-read the script end-to-end
-(602 lines) and confirmed both copies byte-identical (`diff -q` clean), read
-the tests end-to-end (546 lines) and the contract stand-in
-`docs/routstr-delist.md` (129 lines), re-ran every grep programmatically,
-re-ran the suite under both runners (`python3 -m pytest tests/ -q` →
-**55 passed in 0.40s**; `python3 -m unittest discover -s tests` → **Ran 55
-tests in 0.071s, OK**), and executed **fourteen hermetic mutation probes** on
-a /tmp copy of src+tests (eight gap-probes + six controls; every mutant's
-target string was verified to occur exactly once before patching; /tmp copy
-destroyed after the run; no artifact touched, no network).
+Third independent analysis pass for finding 8 (2026-09-25). Scope: original
+task item 8 — test rigour: would the existing tests catch a broken
+implementation, and what do they fail to pin? The artifact set CHANGED since
+the second pass (2026-09-17): the script grew 602 → 829 lines (round-2
+fixes), the bot tests path now EXISTS (second pass reported it missing) with
+the 25-case TDD contract suite, and the repo grew a 96-test main suite that
+is NOT deployed at the bot path. Nothing is carried over unverified: this
+session re-read the deployed script end-to-end (829 lines) and the deployed
+suite end-to-end (752 lines), confirmed both byte-identical to their repo
+counterparts (`diff -q` clean), read the contract stand-in
+`docs/routstr-delist.md` (197 lines) end-to-end, re-ran both suites
+(deployed contract suite on a hermetic /tmp copy of the exact bot bytes:
+**25 passed in 0.26s**; repo full suite: **121 passed in 0.50s**), and
+executed **seventeen hermetic mutation probes** on the /tmp copy (every
+mutant's target string was verified to occur exactly once before patching;
+two further gap classes are proven by programmatic zero-hit counts;
+/tmp copy destroyed after the run; no artifact touched, no network).
 
 **Artifact-path status (required report per task instructions):**
 
 - `~/.hermes/bot/docs/routstr_delist_contract.md` — **MISSING — HIGH**
-  (re-verified this session: `~/.hermes/bot/docs/` contains only `reviews/`;
-  zero `*contract*` files under `~/.hermes/bot`). The contract role is filled
-  by repo `docs/routstr-delist.md` — cited by the script itself at
-  routstr_delist.py:21 — read end-to-end as the stand-in.
-- `~/.hermes/bot/tests/test_routstr_delist.py` — **MISSING — HIGH** (no
-  `tests/` directory exists under `~/.hermes/bot`; `ls` re-run this session).
-  Repo counterpart `tests/test_routstr_delist.py` (546 lines, 55 tests) read
-  end-to-end and reviewed instead.
-- `~/.hermes/bot/scripts/routstr_delist.py` — present (602 lines), verified
+  (third consecutive pass; `find ~/.hermes/bot -iname '*contract*'` → zero
+  hits this session). The contract role is filled by repo
+  `docs/routstr-delist.md` — cited by the script itself at
+  routstr_delist.py:21 — read end-to-end as the stand-in. Note the bot's
+  own copy of the stand-in (`~/.hermes/bot/docs/routstr-delist.md`) is 14
+  changed lines STALE vs the repo copy.
+- `~/.hermes/bot/scripts/routstr_delist.py` — present (829 lines), verified
   byte-identical to repo `src/routstr_delist.py` this session.
+- `~/.hermes/bot/tests/test_routstr_delist.py` — present (752 lines),
+  verified byte-identical to repo `tests/test_routstr_delist_contract.py`;
+  its loader (tests:47-54) resolves `../src` first, `../scripts` second, so
+  the bot copy runs against the deployed script. IMPORTANT: the bot path
+  deploys ONLY this 25-case contract suite — the 96-test repo main suite
+  (`tests/test_routstr_delist.py`, 1172 lines) is not deployed there.
 
 Conventions: `routstr_delist.py:N` = the script (both copies identical);
-`tests:N` = repo tests; `docs:N` = repo `docs/routstr-delist.md`.
+`tests:N` = the bot-deployed contract suite (752 lines); `main:N` = repo
+main suite `tests/test_routstr_delist.py` (1172 lines, NOT deployed);
+`docs:N` = repo `docs/routstr-delist.md`.
 
-## Finding 8 — test rigour — **MEDIUM (decision core strongly pinned; production result-computation, multi-run semantics, and two fail-safe guards unpinned)**
+## Finding 8 — test rigour — **MEDIUM (decision core strongly pinned by payload-executing fakes; production backend result computation and deadline clamp never executed, and eight contract hard rules are pinned only in the non-deployed main suite)**
 
-Suite facts re-measured this session: **55 tests, 12 classes**
-(`grep -c '^class Test'` = 12; the original cold review's "13" remains an
-erratum), hermetic as claimed (tests:3-6): every remote path is faked
-(`FakeBackend` tests:32-46), monkeypatched (`mock.patch.object(rd,
-"_SshBackend", ...)` at tests:360, 385, 417, 423, 437, 448), or driven only
-through the dry-run early-return (routstr_delist.py:578-580). All state lives
-in tmpdirs; no test touches the network.
+Suite facts re-measured this session: **25 tests, 11 classes** (one per
+required case), hermetic as claimed: the FakeSellNode is a named
+shared-cache in-memory sqlite (tests:114-121) that EXECUTES the script's
+real payload builders (tests:175-190) instead of shelling out; `rd.time` is
+swapped for a FakeTime whose wall clock stays REAL so the mtime freshness
+guard sees just-written fixture feeds as fresh (tests:27-29, 71-89); fsync
+is no-op'd with a documented host-stall justification (tests:252-257,
+629-634). No test touches the network.
 
-Method: mutation analysis on a pristine /tmp copy. A **gap-probe** is a
-production-code mutant that yields 55/55 if a coverage claim is false; a
-**control** is a mutant the suite must catch, proving the harness detects
-regressions where tests are strong. All fourteen results this session:
+Method: mutation analysis on a pristine /tmp copy of the exact deployed
+bytes. A **gap-probe** is a production-code mutant that yields 25/25 if a
+pin is missing; a **control** must be caught. Results this session:
 
 | id | mutant (production code) | result | verdict |
 |----|--------------------------|--------|---------|
-| M1 | `res["ok"] = proc.returncode == 0 and data.get("ok") is True` → forced `True` (routstr_delist.py:595) | 55/55 green | gap CONFIRMED |
-| M2 | last-line stdout parse `out.splitlines()[-1]` → `[0]` (routstr_delist.py:587) | 55/55 green | gap CONFIRMED |
-| M3 | event `content` hardcodes `"delisted": True`, ignoring the parameter (routstr_delist.py:391) | 55/55 green | gap CONFIRMED |
-| M7 | `--status` drops `ts`/`last_reason`/`pulled_models`/`snapshot_windows` keys (routstr_delist.py:474-479) | 55/55 green | gap CONFIRMED |
-| M8 | CLI `--move-hours`/`--variance` wiring swapped at the `evaluate_triggers` call (routstr_delist.py:512-514) | 55/55 green | gap CONFIRMED |
-| M12 | finding-4 `pulled_models` clobber (routstr_delist.py:543) replaced by a preserve-fix | 55/55 green | gap CONFIRMED |
-| F1 | `manual_override` `os.path.isfile` → `os.path.exists` (routstr_delist.py:155) — NEW probe this pass | 55/55 green | gap CONFIRMED |
-| F2 | `load_state` drops the `isinstance(data, dict)` guard, returns any valid-JSON value (routstr_delist.py:199) — NEW probe this pass | 55/55 green | gap CONFIRMED |
-| M4 | variance `unc > threshold` → `>=` (routstr_delist.py:137) | 1 failed | caught by `TestVarianceJump::test_threshold_is_strict` (tests:105-106) |
-| M5 | acceleration `moved >= move_hours` → `>` (routstr_delist.py:106) | 1 failed | caught by `TestBurnAcceleration::test_threshold_is_inclusive` (tests:69-72) |
-| M6 | `shlex.quote(payload)` dropped (routstr_delist.py:375) | 1 failed | caught by `test_ssh_cmd_is_single_shlex_safe_remote_command` (tests:262-275) |
-| M10 | pull SQL drops `WHERE enabled=1` (routstr_delist.py:320) | 1 failed | caught by `test_pull_payload_scoped_to_models_table` (tests:244-251) |
-| F3 | `_read_preds` drops the non-dict filter, returns raw list (routstr_delist.py:430) — NEW control this pass | 1 failed | caught by `test_non_dict_preds_entries_are_dropped_not_fatal` (tests:527-542) |
-| F5 | `update_state` empty-preds guard `if preds:` → `if True:` (routstr_delist.py:228) — NEW control this pass | 2 failed | caught by tests:203-209 (baseline wipe) and tests:392-407 (corrupt-feed baseline survival) |
+| G1 | `_run` ok-gate `rc==0 and data ok` → forced `True` (routstr_delist.py:822) | 25/25 green | gap CONFIRMED |
+| G2 | last-line stdout parse → `[0]` (routstr_delist.py:814) | 25/25 green | gap CONFIRMED |
+| G3 | `_run` deadline clamp block deleted (routstr_delist.py:801-806) | 25/25 green | gap CONFIRMED |
+| G4 | blanket-relist refusal bypassed `if False:` (routstr_delist.py:602) | 25/25 green | gap CONFIRMED |
+| G5 | stale-feed zeroing dropped (routstr_delist.py:591-592) | 25/25 green | gap CONFIRMED |
+| G6 | re-delist `pulled_models` clobber (routstr_delist.py:746) | 1 failed | caught by tests:524-538 (merge preserved) |
+| G7 | verify `count == 0` gate dropped (routstr_delist.py:683) | 1 failed | caught by tests:346-360 (lying pull refuted) |
+| G8 | variance `>` → `>=` (routstr_delist.py:154) | 1 failed | caught by tests:379-387 (0.30 exact is quiet) |
+| G9 | acceleration `>=` → `>` boundary (routstr_delist.py:121) | 25/25 green | gap CONFIRMED |
+| G10 | `manual_override` `isfile` → `exists` (routstr_delist.py:172) | 25/25 green | gap CONFIRMED |
+| G11 | `load_state` non-dict guard dropped (routstr_delist.py:216) | 25/25 green | gap CONFIRMED |
+| G12 | CLI `--move-hours`/`--variance` wiring swapped (routstr_delist.py:647-648) | 1 failed | caught (swapped DEFAULTS break tests:364-377) |
+| G13 | event content `delisted` hardwired `True` (routstr_delist.py:440) | 25/25 green | gap CONFIRMED |
+| G14 | dry-run flips durable `delisted` flag (routstr_delist.py:705) | 1 failed | caught by tests:731-744 (dry-run purity) |
+| G15 | `MAX_PULL_ATTEMPTS` 2 → 3 (routstr_delist.py:75) | 2 failed | caught by tests:346-360 + 582-599 (exact kind counts) |
+| G16 | `--preds-key` filter dropped (routstr_delist.py:597) | 1 failed | caught by tests:389-399 (scoping) |
+| G17 | failed relist returns 0 (routstr_delist.py:630-632) | 25/25 green | gap CONFIRMED |
 
-**Strongly pinned — OK (all six controls caught; "mentally break it and
-tests fail"):**
+Two further gap classes are proven WITHOUT a run by programmatic zero-hit
+counts in the deployed suite: `--status` (0 occurrences → any --status
+mutant is green) and explicit `--move-hours`/`--variance` values (0
+occurrences → a mutant that ignores explicitly-passed thresholds and uses
+defaults is green; G12 shows only the DEFAULT plumbing is pinned).
 
-1. **Trigger logic — OK.** Direction inversion and both threshold edges
-   (tests:59-72, 97-106), first-run false-positive guard (tests:136-141),
-   per-key/window separation (tests:78-88), non-numeric `exhausts_in_hours`
-   (tests:90-92), missing `uncertainty` (tests:113-116), legacy `|` and
-   `\x1f` snapshot keys (tests:143-151, 178-190).
-2. **Failure semantics — OK.** Failed pull: rc==1, `delisted` stays false,
-   `last_pull_error` recorded, baseline preserved and re-fires
-   (tests:351-375); failed relist rc==1 (tests:377-390); corrupt feed:
-   `preds_error` + baseline survives (tests:392-407); empty-preds baseline
-   guard (tests:203-209; F5 control breaks exactly two tests — the guard is
-   doubly load-bearing).
-3. **Feed hygiene — OK.** Non-dict entries in an otherwise-valid feed are
-   dropped, not fatal (tests:527-542; F3 control).
-4. **Shell safety — OK.** shlex round-trip re-parse (tests:262-275).
-5. **SQL scoping — OK at payload level.** The full
-   `UPDATE models SET enabled=0 WHERE enabled=1` string is asserted inside
-   the payload (tests:246), which is what caught M10; parameterized relist
-   and no-interpolation pinned (tests:252-257).
+**Strongly pinned — OK (7/7 catchable mutants caught; "mentally break it
+and tests fail"):**
 
-**Gaps (each probe-confirmed still-green this session; numbered for
-should-fix):**
+1. **Re-fetch confirmation — OK.** The suite's standout: FakeSellNode can
+   simulate a LYING pull (rc 0, ok printed, UPDATE never lands,
+   tests:101-104, 177-189) and only the independent read-only re-fetch
+   refutes it — G7 proves the `count == 0` gate (routstr_delist.py:683) is
+   load-bearing, with exact round-trip sequence `[pull, verify, pull,
+   verify]` (tests:357).
+2. **SALE-vs-provider scoping — OK, now at executed-SQL level.** Real
+   payloads run against a schema with BOTH `models` and
+   `upstream_providers` (tests:107-135); the ladder artifact is asserted
+   byte-identical and the providers table row-identical across a delist
+   (tests:469-488), and the scoped relist provably restores exactly the
+   advertised names while operator-disabled rows stay disabled
+   (tests:490-507). This is stronger than the old suite's substring pins.
+3. **Multi-run semantics — OK.** Re-delist merge no-clobber
+   (routstr_delist.py:744-746; G6 via tests:524-538 — the second pass's
+   M12 gap is closed in the deployed suite), debounce via baseline
+   consumption (tests:437-464), idempotent quiet re-run (tests:512-522).
+4. **Retry/breaker accounting — OK.** `MAX_PULL_ATTEMPTS` pinned by exact
+   kind counts: 2 round-trips per refuted run (tests:357), 6 pulls across
+   3 failing runs with verify never reached (tests:599); exit sequence
+   `[1, 1, 3]`, durable `"blocked": true` marker, blocked-refusal with
+   zero remote calls, `--unblock` recovery (tests:582-624).
+5. **Trigger edges — OK.** Variance strictly-greater (G8, tests:379-387),
+   first-run false-positive guard (tests:308-314), `--preds-key` scoping
+   (G16, tests:389-399).
+6. **Dry-run purity — OK.** No subprocess, no durable flag, pre-existing
+   flag survives (G14, tests:731-752).
+7. **Atomic-write protocol — OK.** Swap-instant observation (old state
+   intact at dst, complete new state in tmp, exactly one replace) and
+   crash-between-tmp-and-replace simulation (tests:636-686).
+8. **Secret hygiene — OK.** Env-only transport asserted end-to-end: secret
+   never in argv/logs/state, `--env-sec` present, `--sec` absent, kind
+   30078 and `d:routstr-delist` on the argv (tests:705-729).
 
-1. **Production success/failure computation unpinned — MEDIUM (largest
-   gap).** The subprocess branch of `_SshBackend._run`
-   (routstr_delist.py:581-598) is never executed by any test — every remote
-   action is faked or dry-run. Its two load-bearing behaviours mutate
-   freely: the rc+payload ok-gate (routstr_delist.py:595, M1) and the
-   last-line JSON parse (routstr_delist.py:587, M2) can be arbitrarily
-   broken with the suite staying 55/55. Every real-world delist/relist
-   success decision flows through exactly this code. Refinement vs the cold
-   review's wording: the dry-run early-return (routstr_delist.py:578-580)
-   IS exercised by ten main-path tests (`test_triggered_run_pulls_within_window`,
-   `test_unreadable_preds_feed_is_error_not_quiet`, `test_status_prints_state`,
-   `test_quiet_run_without_preds…`, `test_baseline_then_acceleration_fires`,
-   `test_manual_marker_file_fires`, `test_delist_flag_forces_fire`,
-   `test_relist_restores`, `test_missing_preds_file…`,
-   `test_non_dict_preds…`) — it is the network/rc/parse branch that is dead
-   to the suite. `main()`'s handling of an `ok:False` result IS tested
-   (tests:351-375); what is unpinned is the computation of `ok` itself.
-   Hermetic fix: mock `subprocess.run` and feed stdout/rc pairs into the
-   real `_run`.
-2. **Multi-run delist semantics unpinned — MEDIUM (feeds finding 4's HIGH).**
-   No test performs two consecutive successful delists; M12 shows the
-   `pulled_models` clobber (routstr_delist.py:543 → blanket-relist arming at
-   routstr_delist.py:491) and its fix are indistinguishable to the suite.
-   The scoped-relist round-trip (tests:412-428) has no second delist in the
-   gap, and its `fb2.calls` assertion would pass even with the clobber in
-   between. Add a delist→delist→relist test.
-3. **`manual_override` marker semantics weakly pinned — LOW (new this pass,
-   F1).** The tests cover present/missing/None (tests:121-131) but never a
-   directory at the marker path; `isfile` → `exists`
-   (routstr_delist.py:155) stays green, i.e. a stray directory (e.g. an
-   accidental `mkdir` of the override path) would silently arm a permanent
-   manual delist with nothing failing. One test with a tmpdir-as-marker
-   pins it.
-4. **`load_state` non-dict guard unpinned — LOW (new this pass, F2).**
-   `test_load_state_never_raises` (tests:219-224) covers corrupt text and a
-   missing path only; a state file containing valid non-dict JSON (e.g.
-   `[]` from an operator or a truncated rewrite) flows through unfiltered
-   when the `isinstance` guard at routstr_delist.py:199 is removed —
-   downstream `state.get(...)` calls (routstr_delist.py:474, 491, 519)
-   would crash the cron run instead of degrading to `{}`. Probe-confirmed
-   still-green; a one-line test (write `"[]"`, expect `{}`) closes it.
-5. **Event `delisted` parameter tautology — LOW (M3).**
-   `test_event_content_reflects_relist` (tests:322-324) calls
-   `build_delist_event("/nonexistent", delisted=False)`, which returns None
-   at the missing-file guard (routstr_delist.py:388-389) before the
-   `delisted` parameter is ever read — M3 proves the content parameter is
-   unpinned. The test is a duplicate of tests:302-303 under a misleading
-   name. (Call-site semantics ARE pinned: tests:430-442, 444-453.)
-6. **CLI threshold plumbing untested — LOW (M8).** No test passes
-   `--move-hours` or `--variance` (grep zero hits, re-run this session);
-   swapped wiring at routstr_delist.py:512-514 stays green. The pure
-   functions are tested with explicit thresholds, so the
-   argparse→evaluate handoff is the blind spot.
-7. **`--status` output contract weakly pinned — LOW (M7).**
-   `test_status_prints_state` (tests:468-471) asserts only
-   `"delisted" in out`; dropping four of the five printed keys
-   (routstr_delist.py:474-479) stays green.
-8. **SLA test proves only absence of sleep — LOW (cross-ref finding 5).**
-   `test_triggered_run_pulls_within_window` (tests:332-344) wall-clocks a
-   dry-run main call; nothing in the script consumes
-   `TRIGGER_ACTION_WINDOW_S` (single occurrence in src: the definition at
-   routstr_delist.py:63 — grep re-run this session), so
-   `test_window_constant_is_300` (tests:329-330) asserts a literal equals a
-   literal and no test can fail while the ≤5-minute contract is violated in
-   deployment.
-9. **Constant-level SQL assertions substring-only — LOW.**
-   `test_pull_sql_touches_only_models_listing` (tests:229-235) checks
-   `"models"`/`"enabled=0"` substrings; M10 shows a dropped `WHERE`
-   escapes THAT test — it survives only because the payload-level pin
-   (tests:246) embeds the same constant. The protection is real but
-   incidental; a full-string assert on `pull_listing_sql()` would make it
-   direct.
+**Gaps (numbered for should-fix; each dynamically probed or statically
+zero-hit-proven this session):**
 
-**Acceptable hermetic choices (not gaps):** `publish_delist_event`'s
-subprocess path (routstr_delist.py:402-415) is mocked at both call sites
-(tests:437-438, 448-450) while the argv it would run IS shape-tested
-(tests:305-320, including `--env-sec`/never-`--sec` and kind 30078); the
-secret never enters any assertion-visible argv. Call-site behaviour
-(delisted=True on pull, delisted=False on relist) is behaviourally pinned
-(tests:430-442, 444-453).
+1. **Production `_SshBackend._run` never executed by the deployed suite —
+   MEDIUM (largest; the second pass's M1/M2 gap persists in the deployed
+   rig).** The Rig replaces `rd._SshBackend` wholesale (tests:249-250) with
+   `_NodeBackend`, which REIMPLEMENTS the production result semantics: the
+   last-line JSON parse at tests:190 mirrors routstr_delist.py:814, the
+   ok-gate at tests:237 mirrors routstr_delist.py:822, the deadline clamp
+   at tests:225 mirrors routstr_delist.py:800-806. Mutants G1 (ok forced
+   True), G2 (first-line parse), G3 (clamp deleted) are all 25/25 green —
+   every real-world delist/relist success decision flows through exactly
+   this dead-to-the-suite code, and a mock that mirrors production
+   semantics cannot detect production drift. The repo main suite closed
+   the parse/ok-gate half (main:1100-1145 — the class docstring literally
+   cites this review's prior "mock-only gap"), but that suite is not
+   deployed at the bot path.
+2. **Backend deadline clamp unpinned ANYWHERE — MEDIUM (cross-ref finding
+   5).** G3's target (routstr_delist.py:800-806: `timeout =
+   min(SSH_TIMEOUT_S, remaining)` and the "action budget exhausted"
+   early-return at :803-805) is dead code to BOTH suites: the deployed
+   suite never runs `_run` at all, and main's real-backend tests call
+   `pull()`/`verify()` with NO deadline (main:1107-1144) while main's
+   deadline test exercises main()'s retry-cap consumption through a FAKE
+   backend (main:450-463). No test captures the `timeout` kwarg handed to
+   `subprocess.run` (routstr_delist.py:808-809). A dropped clamp lets a
+   hung ssh burn up to SSH_TIMEOUT_S=30 s past the action budget — the
+   exact zero-slack boundary finding 5 already flagged.
+3. **Eight contract hard rules pinned only in the non-deployed main suite —
+   MEDIUM (deployment asymmetry).** Each is a documented hard rule
+   (docs:27-36, 56-60, 76-83) that stays 25/25 green at the bot path:
+   blanket-relist refusal (routstr_delist.py:602-611; G4 — deployed suite's
+   only `--relist` use is the success path, tests:496; main pins refusal ×3
+   + `--relist-any` ×5); stale-feed zeroing (routstr_delist.py:589-592; G5
+   — deployed suite proves only the INVERSE, that manual override ignores
+   staleness, tests:427-433; main pins stale-blocks-triggers ×8);
+   failed-relist exit 1 + state honesty (routstr_delist.py:626-632; G17;
+   main:538-545); relist-event content `delisted: false`
+   (routstr_delist.py:440; G13 — deployed Case 11 asserts argv shape but
+   never the `--content` payload; main:408-416); `--status` key set
+   (routstr_delist.py:548-557; static zero-hit; main:679, 740-742);
+   explicit `--move-hours`/`--variance` values (static zero-hit; main:
+   755-773); acceleration boundary inclusivity (routstr_delist.py:121; G9;
+   main:97-100); `load_state` non-dict guard (routstr_delist.py:216; G11;
+   main:266-271). Net effect: docs:187-189 presents the bot-path copies as
+   the deployed verification rig, yet an operator running only the bot
+   tests gets 25/25 green with any of these eight broken.
+4. **Marker-as-directory unpinned repo-wide — LOW (second pass's F1, still
+   open both suites).** G10: `isfile` → `exists`
+   (routstr_delist.py:172) is green; `isdir` has ZERO hits in either
+   suite. A stray directory at the override path silently arms a permanent
+   manual delist and nothing fails.
+5. **fsync call-presence unpinned repo-wide — LOW (new this pass).** Both
+   contract-suite fixtures no-op `os.fsync` without observing calls
+   (tests:257, 634), and the main suite contains zero `fsync` references
+   at all — so deleting the `os.fsync(fh.fileno())` call
+   (routstr_delist.py:234) is green everywhere. The ATOMICITY half of the
+   docs:80-83 claim is genuinely pinned (tests:636-686), but its
+   durability half rests on code no test observes executing.
 
-**Overall verdict: MEDIUM.** The pure decision core — the code that decides
-WHEN to delist — is strongly pinned (6/6 controls caught this session;
-direction, edges, first-run guard, baseline preservation, feed hygiene all
-fail-on-break). The unpinned surface is concentrated and identifiable: the
-one network-touching function's result computation (gap 1), multi-run
-`pulled_models` semantics (gap 2, which is why finding 4's HIGH escaped the
-suite), and seven tautology/weak-pin spots (gaps 3-9, two of them first
-probed this pass) that make "55 tests" overstate the effective pin set. No
-gap endangers the SALE-vs-provider distinction itself (pinned at payload
-level, tests:244-251, 262-275).
+**Acceptable hermetic choices (not gaps):** wall time deliberately left
+real under FakeTime so the mtime freshness guard works (tests:27-29);
+in-memory shared-cache sqlite instead of file-backed (tests:114-121 —
+file-sqlite lock acquisition can stall indefinitely on this fleet host,
+a real constraint this session's prior passes hit); `subprocess` mocked
+only where nak would spawn (tests:694-703); FakeTime's monotonic-only
+patch keeping SLA tests deterministic (tests:71-89).
 
-**Should-fix (non-blocking, maps 1:1 to the numbered gaps):** (1) exercise
-the real `_SshBackend._run` with mocked `subprocess.run` stdout/rc pairs;
-(2) add a delist→delist→relist idempotence test; (3) tmpdir-as-marker
-negative test for `manual_override`; (4) valid-JSON-non-dict state-file
-test for `load_state`; (5) replace the tautological event test
-(tests:322-324) with a sec-file-backed `delisted=False` content assert;
-(6) add CLI tests passing `--move-hours`/`--variance`; (7) pin the
-`--status` key set; (8) re-point the window test once finding 5 wires
-`TRIGGER_ACTION_WINDOW_S` to real logic or deletes it; (9) assert the full
-SQL constant string directly.
+**Overall verdict: MEDIUM.** The deployed 25-case contract suite is a
+major rigour upgrade over the 55-test suite the earlier passes reviewed:
+it executes the real payloads against a real two-table schema, observes
+actual SQL effects, refutes lying pulls, asserts ladder byte-identity,
+and pins retry/breaker/dry-run/atomic-write semantics exactly (7/7
+catchable mutants caught; even CLI default wiring is implicitly pinned —
+G12). The residual is concentrated and enumerable: the production
+backend's own result computation and clamp (gaps 1-2 — three probes),
+eight hard rules reachable only via the non-deployed main suite (gap 3),
+and two repo-wide weak pins (gaps 4-5). No gap endangers the
+SALE-vs-provider distinction itself. Artifact status partially healed
+since the second pass (bot tests path now exists, contract suite
+deployed); the contract md remains missing (HIGH above).
+
+**Should-fix (non-blocking, maps 1:1 to the numbered gaps):** (1) deploy
+the main suite alongside the contract suite at the bot path (or fold
+`TestRealBackendRun` into the deployed copy) so a bot-path green run
+certifies what docs:187-189 implies; (2) one mocked-`subprocess.run`
+test asserting `_run`'s `timeout=min(SSH_TIMEOUT_S, remaining)` clamp and
+budget-exhausted early-return; (3) extend the deployed suite with the
+eight gap-3 cases (refusal, stale-blocks-triggers, failed-relist rc,
+relist-event content, --status keys, explicit thresholds, accel boundary,
+non-dict state); (4) tmpdir-as-marker negative test for
+`manual_override`; (5) assert the (faked) fsync is called in Case 10.
