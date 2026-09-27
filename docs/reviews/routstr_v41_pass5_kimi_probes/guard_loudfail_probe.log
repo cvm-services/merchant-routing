@@ -1,0 +1,16 @@
+### GUARD LOUD-FAIL PROBE (pass 5, 2026-09-27)
+# argv: --balance-json ; ROUTSTRD_CLI='' (set-but-empty disables the daemon reader)
+#       ROUTSTRD_WALLET_DB=/tmp/rf5/nope/coco.db (missing db, on purpose)
+# script under test: /home/c03rad0r/mre-rev5/scripts/routstrd_funding_guard.py @ 8b91148
+#
+# NOTE ON rc CAPTURE: the first pass piped python3 through `tee`, so `$?` was
+# tee's 0. The rc values below were then taken in an unfiltered run (no pipe) of
+# the identical command; stdout/stderr are quoted verbatim from that run.
+
+--- case A: HOME=/tmp/rf5/fakehome (HAS ~/.routstrd/wallet) ---
+⚠️ funding guard: routstrd wallet read FAILED — daemon: routstrd daemon CLI not found (no `routstrd` on PATH and no bun + /tmp/rf5/fakehome/routstrd/dist/index.js) | db: wallet db missing: /tmp/rf5/nope/coco.db
+caseA rc=2
+
+--- case B: HOME=/tmp/rf5/nohome (NO ~/.routstrd — the dq05 shape) ---
+routstrd wallet not present on this host
+caseB rc=0

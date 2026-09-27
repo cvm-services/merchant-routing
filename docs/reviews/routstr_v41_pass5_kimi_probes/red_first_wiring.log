@@ -1,0 +1,4 @@
+### RED-FIRST wiring: a81041ee test vs 34aa21ac^ code ###
+FAILED test_routstr_v41_lane_wiring.py::test_resolution_helper_returns_network_id[routstr]
+FAILED test_routstr_v41_lane_wiring.py::test_resolution_helper_returns_network_id[routstrd]
+9 failed, 19 passed in 1.07s

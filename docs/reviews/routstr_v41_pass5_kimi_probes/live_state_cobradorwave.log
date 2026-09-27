@@ -1,0 +1,63 @@
+### LIVE STATE — lane host c03rad0r@100.90.101.9 (CobradorWave), captured 2026-09-27 by the reviewer
+# commands run over ssh BatchMode; outputs verbatim.
+
+$ systemctl --user is-active routstrd.service   -> failed
+$ systemctl --user is-enabled routstrd.service  -> enabled
+$ systemctl --user show routstrd.service -p ActiveState -p SubState -p Result -p ExecMainStatus -p NRestarts
+ActiveState=failed SubState=failed Result=exit-code NRestarts=9 ExecMainStatus=203
+$ loginctl show-user c03rad0r -p Linger
+Linger=yes
+$ ss -ltn | grep -E ':(8008|8009)'
+(none — no listener on either lane port)
+$ curl -sS -m5 -o /dev/null -w 'http=%{http_code}\n' http://localhost:8008/v1/models
+curl: (7) Failed to connect to localhost port 8008 after 0 ms: Could not connect to server
+http=000
+
+$ crontab -l | grep -i routstrd
+# RETIRED 2026-09-20 (parked routstr / dead dq05) — */5 * * * * /home/c03rad0r/merchant-routing-engine/scripts/routstrd_balance_cron.sh >> /home/c03rad0r/merchant-routing-engine/logs/routstrd_balance_collector.log 2>&1 # routstrd-balance-collector
+#Ansible: routstrd-funding-guard
+*/5 * * * * /home/c03rad0r/merchant-routing-engine/scripts/routstrd_funding_guard.py >> /home/c03rad0r/merchant-routing-engine/logs/routstrd_funding_guard.log 2>&1
+
+$ ls -la ~/merchant-routing-engine
+lrwxrwxrwx 1 c03rad0r c03rad0r 50 Sep 23 23:40 /home/c03rad0r/merchant-routing-engine -> /mnt/dq05-lexar/cw-offload/merchant-routing-engine
+$ ls -la ~/merchant-routing-engine/scripts/routstrd_funding_guard.py
+ls: cannot access '/home/c03rad0r/merchant-routing-engine/scripts/routstrd_funding_guard.py': No such file or directory
+# => the restored */5 cron is INERT (payload path absent through a broken symlink)
+
+$ systemctl --user cat routstrd.service   (selected lines)
+Documentation=file:/mnt/dq05-lexar/cw-offload/bun/install/global/node_modules/routstrd/SKILL.md
+RequiresMountsFor=/mnt/dq05-lexar /mnt/dq05-lexar/cw-offload/bun
+StartLimitIntervalSec=300
+StartLimitBurst=5
+ExecStart=/mnt/dq05-lexar/cw-offload/bun/bin/bun /mnt/dq05-lexar/cw-offload/bun/install/global/node_modules/routstrd/dist/daemon/index.js --port 8008 --host 127.0.0.1
+ExecStartPre=/home/c03rad0r/.hermes/scripts/routstrd_lane_guard.sh --port 8008
+Environment=HOME=%h
+Environment=ROUTSTRD_DIR=%h/.routstrd
+Environment=ROUTSTRD_WALLET_DIR=%h/.routstrd/wallet
+Restart=always
+RestartSec=5
+
+$ path existence probe on the deployed unit
+/mnt/dq05-lexar exists=yes
+/mnt/dq05-lexar/cw-offload/bun exists=NO
+/mnt/dq05-lexar/cw-offload/bun/bin/bun exists=NO
+/mnt/dq05-lexar/cw-offload/bun/install/global/node_modules/routstrd/dist/daemon/index.js exists=NO
+/mnt/dq05-lexar/cw-offload/bun/install/global/node_modules/routstrd/SKILL.md exists=NO
+# => ExecMainStatus=203 = 203/EXEC: ExecStart's bun is missing on this host, so the
+#    buy lane has NEVER run under this unit; RequiresMountsFor=/mnt/dq05-lexar is
+#    satisfied vacuously (the mountpoint exists, its content does not).
+$ journalctl --user -u routstrd.service -n 4
+-- No entries --
+
+### WALLET READS — ~/.routstrd/wallet/coco.db (same host, same moment)
+$ sqlite3 -readonly        <db> "SELECT mintUrl,SUM(amount),COUNT(*) FROM coco_cashu_proofs WHERE state='ready' GROUP BY mintUrl"
+https://mint.minibits.cash/Bitcoin|35514|29
+https://mint.orangesync.tech|5000|5
+$ sqlite3 'file:<db>?immutable=1'  (same query)
+https://mint.minibits.cash/Bitcoin|35508|27
+https://mint.orangesync.tech|5000|5
+$ total proofs: ro=98   immutable=1=96
+# => mode=ro DOES replay the -wal (98 proofs / 35514 minibits-ready);
+#    immutable=1 does NOT (96 / 35508). WAL-blind reading UNDERSTATES by 6 sats.
+#    network_sats (testnut excluded) = 35514 via the guard's copy+checkpoint reader.
+# file mtimes: coco.db 2026-09-26 13:10, coco.db-wal 2026-09-26 15:05 (168952 B), coco.db-shm 2026-09-27 10:51

@@ -1,0 +1,5 @@
+### GREEN guard+cron @ 8b91148 fix(routstrd): read the migrated ~/.routstrd wallet, not the ###
+tests/test_routstrd_balance_cron.py:102: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_routstrd_balance_cron.py::test_missing_wallet_fails_loudly_and_writes_no_row
+1 failed, 34 passed in 2.75s

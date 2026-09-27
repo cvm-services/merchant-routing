@@ -1,0 +1,44 @@
+[shadow] Converged rates loaded:
+[shadow]   deepinfra        $1.300000/M
+[shadow]   friend           $0.001019/M
+[shadow]   ollama_cloud     $0.024000/M
+[shadow]   openrouter       $0.135000/M
+[shadow]   ours             $10.525989/M
+[shadow]   ppq              $0.140000/M
+real_price_tracker: no real data for ollama_cloud/None — using last-resort ESTIMATE $0.0155/M (this is not a measurement)
+real_price_tracker: no real data for ppq/None — using last-resort ESTIMATE $0.14/M (this is not a measurement)
+real_price_tracker: no real data for openrouter/None — using last-resort ESTIMATE $0.135/M (this is not a measurement)
+real_price_tracker: no real data for deepinfra/None — using last-resort ESTIMATE $1.3/M (this is not a measurement)
+[shadow] ShadowHook initialized — logging to zai_usage.db
+[real_price_tracker] loaded — cost estimation uses measured rates
+[live] LiveRouter initialized — failover selection ready (kill switch: /home/c03rad0r/.hermes/bot/.enable_live_routing)
+[ppq] balance bridge loaded — quota_state['ppq'] reads real credit balance
+[openrouter] balance bridge loaded — quota_state['openrouter'] reads real credit balance
+[telnyx] balance bridge loaded — quota_state['telnyx'] reads real balance
+[routstr] balance bridge loaded — quota_state['routstr'] reads real sats balance
+[neuralwatt] balance bridge loaded — quota_state['neuralwatt'] reads real /v1/quota API
+[neuralwatt] cost-correction bridge loaded — _estimate_cost_usd will scale to real API spend
+[pressure] FSM bridge loaded — shadow mode (state: shadow, kill switch: /home/c03rad0r/.hermes/bot/.pressure_routing_disabled)
+[profit] ProfitTracker loaded — routing_profit savings ledger active
+[telnyx] key=loaded suffix=1yF4 starting_balance=$16.00
+[exhaust_weight] multiplier lookup failed for 'routstr': OperationalError('no such table: kalman_samples')
+canonical: deepseek/deepseek-flash
+PROVIDER_MODELS[routstr]  has canonical: True
+PROVIDER_MODELS[routstrd] has canonical: True
+
+select_provider('deepseek/deepseek-flash') -> 10 candidates
+  deepseek         effective_cost=0.05  attrs=['dispatch_fn', 'effective_cost', 'model', 'name', 'reason']
+  routstr          effective_cost=1.0  attrs=['dispatch_fn', 'effective_cost', 'model', 'name', 'reason']
+  routstrd         effective_cost=1.0  attrs=['dispatch_fn', 'effective_cost', 'model', 'name', 'reason']
+  ollama_cloud     effective_cost=inf  attrs=['dispatch_fn', 'effective_cost', 'model', 'name', 'reason']
+  ollama_cloud_2   effective_cost=inf  attrs=['dispatch_fn', 'effective_cost', 'model', 'name', 'reason']
+  ollama_cloud_3   effective_cost=inf  attrs=['dispatch_fn', 'effective_cost', 'model', 'name', 'reason']
+  ollama_cloud_4   effective_cost=inf  attrs=['dispatch_fn', 'effective_cost', 'model', 'name', 'reason']
+  neuralwatt       effective_cost=inf  attrs=['dispatch_fn', 'effective_cost', 'model', 'name', 'reason']
+  deepinfra        effective_cost=inf  attrs=['dispatch_fn', 'effective_cost', 'model', 'name', 'reason']
+  openrouter       effective_cost=inf  attrs=['dispatch_fn', 'effective_cost', 'model', 'name', 'reason']
+lane 'routstr' in candidates: True
+lane 'routstrd' in candidates: True
+
+_make_dispatch_fn('routstrd') -> _dispatch_external
+_make_dispatch_fn('routstr')  -> _dispatch_external

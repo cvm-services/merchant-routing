@@ -1,0 +1,5 @@
+### GREEN role @ master 9bdb2a0b ###
+tests/test_routstrd_lane_role.py:239: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_routstrd_lane_role.py::test_funding_guard_paths_are_the_restored_ones
+1 failed, 26 passed in 0.71s

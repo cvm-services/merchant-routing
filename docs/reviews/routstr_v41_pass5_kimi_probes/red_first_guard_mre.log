@@ -1,0 +1,5 @@
+### RED-FIRST: 8b91148 tests vs 4429060 (8b91148^) code ###
+ERROR tests/test_routstrd_funding_guard.py::TestMain::test_low_balance_creates_invoice_and_writes_invoice_file
+ERROR tests/test_routstrd_funding_guard.py::TestMain::test_not_installed_is_silent_skip
+ERROR tests/test_routstrd_funding_guard.py::TestMain::test_balance_json_flag_exits_nonzero_on_bad_wallet
+28 failed, 2 passed, 5 errors in 1.24s

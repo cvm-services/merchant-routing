@@ -1,0 +1,31 @@
+242 # it and never copies/forks it.
+243 - name: Stat the funding guard (owned by merchant-routing-engine, not this repo)
+244   ansible.builtin.stat:
+      ^ column 3
+
+<<< caused by >>>
+
+Error while resolving value for 'path'.
+Origin: /tmp/rv41rolepath.VISI9d/repo/roles/51-routstrd-lane/tasks/main.yml:245:11
+
+243 - name: Stat the funding guard (owned by merchant-routing-engine, not this repo)
+244   ansible.builtin.stat:
+245     path: "{{ routstrd_funding_guard_script }}"
+              ^ column 11
+
+<<< caused by >>>
+
+'ansible_user_id' is undefined
+Origin: /tmp/rv41rolepath.VISI9d/repo/roles/51-routstrd-lane/defaults/main.yml:101:32
+
+ 99 routstrd_funding_guard_enabled: true
+100 routstrd_funding_guard_name: routstrd-funding-guard
+101 routstrd_funding_guard_script: "{{ ansible_user_dir | default('/home/' + ansible_user_id) }}/merchant-routing-eng...
+                                   ^ column 32
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task failed: Finalization of task args for 'ansible.builtin.stat' failed: Error while resolving value for 'path': 'ansible_user_id' is undefined"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=11   changed=4    unreachable=0    failed=1    skipped=8    rescued=0    ignored=0   
+
+PLAYBOOK rc=2
