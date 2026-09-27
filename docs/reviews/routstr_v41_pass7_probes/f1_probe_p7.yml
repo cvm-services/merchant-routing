@@ -1,0 +1,32 @@
+---
+# pass-6 probe: does 37d6b55f's templated guard path actually blow up?
+# Shape copied verbatim from origin/master:roles/51-routstrd-lane/defaults/main.yml:101
+#   routstrd_funding_guard_script: "{{ ansible_user_dir | default('/home/' + ansible_user_id) }}/merchant-routing-engine/scripts/routstrd_funding_guard.py"
+# gather_facts: false is the documented converge shape for the fleet roles
+# (the reviewed role's own linger task uses `ansible_user_id | default(lookup('env','USER'))`
+#  instead, which is safe).
+- hosts: localhost
+  gather_facts: false
+  vars:
+    routstrd_funding_guard_script: "{{ ansible_user_dir | default('/home/' + ansible_user_id) }}/merchant-routing-engine/scripts/routstrd_funding_guard.py"
+    safe_control: "{{ ansible_user_id | default(lookup('env', 'USER')) }}"
+  tasks:
+    - name: "F1-A render the templated guard path (37d6b55f form)"
+      ansible.builtin.debug:
+        msg: "{{ routstrd_funding_guard_script }}"
+      register: f1a
+      ignore_errors: true
+
+    - name: "F1-A verdict"
+      ansible.builtin.debug:
+        msg: "FAILED={{ f1a is failed }} MSG={{ f1a.msg | default('') }}"
+
+    - name: "F1-B control the safe fallback shape used by the same role's linger task"
+      ansible.builtin.debug:
+        msg: "{{ safe_control }}"
+      register: f1b
+      ignore_errors: true
+
+    - name: "F1-B verdict"
+      ansible.builtin.debug:
+        msg: "FAILED={{ f1b is failed }} MSG={{ f1b.msg | default('') }}"

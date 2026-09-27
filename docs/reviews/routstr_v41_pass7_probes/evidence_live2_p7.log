@@ -1,0 +1,30 @@
+$ timeout 60 ssh -o BatchMode=yes CobradorWave 'ls -l ~/.routstrd/wallet/; echo "--- journal_mode:"; sqlite3 "file:$HOME/.routstrd/wallet/coco.db?mode=ro" "pragma journal_mode;"'
+total 660
+-rw------- 1 c03rad0r c03rad0r 634880 Sep 27 11:33 coco.db
+-rw------- 1 c03rad0r c03rad0r  32768 Sep 27 11:47 coco.db-shm
+-rw------- 1 c03rad0r c03rad0r      0 Sep 27 11:33 coco.db-wal
+-rw------- 1 c03rad0r c03rad0r    343 Sep 26 12:11 config.json
+-rw------- 1 c03rad0r c03rad0r      7 Sep 26 14:54 wallet.pid
+--- journal_mode:
+wal
+[exit=0]
+
+$ timeout 60 ssh -o BatchMode=yes CobradorWave 'md5sum ~/merchant-routing-engine/scripts/routstrd_funding_guard.py; git -C ~/merchant-routing-engine rev-parse HEAD'
+fec2e50a6840517f3f19f4e4a5a4d55f  /home/c03rad0r/merchant-routing-engine/scripts/routstrd_funding_guard.py
+07a20dec5e0cf7b9201d49d9236a4e52e1a37600
+[exit=0]
+
+$ cd /home/c03rad0r/mre-rev5 && git show 8b91148:scripts/routstrd_funding_guard.py | md5sum; git show 8b91148:scripts/routstrd_balance_cron.sh | md5sum; md5sum scripts/routstrd_balance_cron.sh
+fec2e50a6840517f3f19f4e4a5a4d55f  -
+aa788550f3637bcdfc7e017c5b9f7bb4  -
+aa788550f3637bcdfc7e017c5b9f7bb4  scripts/routstrd_balance_cron.sh
+[exit=0]
+
+$ timeout 60 ssh -o BatchMode=yes CobradorWave 'md5sum ~/merchant-routing-engine/scripts/routstrd_balance_cron.sh; echo "--- guard log tail:"; tail -3 ~/merchant-routing-engine/logs/routstrd_funding_guard.log 2>&1; ls -l ~/merchant-routing-engine/logs/routstrd_funding_guard.log'
+aa788550f3637bcdfc7e017c5b9f7bb4  /home/c03rad0r/merchant-routing-engine/scripts/routstrd_balance_cron.sh
+--- guard log tail:
+/bin/sh: 1: /home/c03rad0r/merchant-routing-engine/scripts/routstrd_funding_guard.py: not found
+⚠️ funding guard: balance read failed: Expecting value: line 1 column 1 (char 0)
+⚠️ funding guard: balance read failed: Expecting value: line 1 column 1 (char 0)
+-rw-rw-r-- 1 c03rad0r c03rad0r 32458 Aug 31 07:00 /home/c03rad0r/merchant-routing-engine/logs/routstrd_funding_guard.log
+[exit=0]

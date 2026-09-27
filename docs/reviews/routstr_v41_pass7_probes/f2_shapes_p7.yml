@@ -1,0 +1,28 @@
+---
+# pass-7 probe: which eager-default shapes survive gather_facts:false?
+- hosts: localhost
+  gather_facts: false
+  vars:
+    v51: "{{ ansible_user_dir | default('/home/' + ansible_user_id) }}/x"
+    fleet_shape: "{{ ansible_env.HOME | default('/home/' + ansible_user_id) }}/x"
+    safe_shape: "{{ ansible_user_id | default(lookup('env','USER')) }}/x"
+    env_home: "{{ lookup('env','HOME') }}/x"
+  tasks:
+    - ansible.builtin.debug: {msg: "{{ v51 }}"}
+      register: r51
+      ignore_errors: true
+    - ansible.builtin.debug: {msg: "{{ fleet_shape }}"}
+      register: rfleet
+      ignore_errors: true
+    - ansible.builtin.debug: {msg: "{{ safe_shape }}"}
+      register: rsafe
+      ignore_errors: true
+    - ansible.builtin.debug: {msg: "{{ env_home }}"}
+      register: renv
+      ignore_errors: true
+    - ansible.builtin.debug:
+        msg:
+          - "role51_shape FAILED={{ r51 is failed }} :: {{ r51.msg | default(r51.msg|default('')) }}"
+          - "fleet_shape   FAILED={{ rfleet is failed }} :: {{ rfleet.msg | default('') }}"
+          - "safe_shape    FAILED={{ rsafe is failed }} :: {{ rsafe.msg | default('') }}"
+          - "env_home      FAILED={{ renv is failed }} :: {{ renv.msg | default('') }}"

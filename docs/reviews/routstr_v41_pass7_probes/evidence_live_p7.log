@@ -1,0 +1,63 @@
+$ timeout 60 ssh -o BatchMode=yes CobradorWave 'md5sum ~/.hermes/bot/flat_router.py ~/.hermes/bot/zai_proxy.py'
+1dc1091bd4d264edbfe2c0e9cae89454  /home/c03rad0r/.hermes/bot/flat_router.py
+c2f13451b527acdba70861224a966287  /home/c03rad0r/.hermes/bot/zai_proxy.py
+[exit=0]
+
+$ timeout 60 ssh -o BatchMode=yes CobradorWave 'systemctl --user show routstrd.service -p ActiveState -p SubState -p Result -p ExecMainStatus -p NRestarts -p RestartUSec -p Restart -p StartLimitIntervalUSec -p StartLimitBurst -p RequiresMountsFor -p WorkingDirectory -p ExecStartPre -p Environment -p Linger'
+RequiresMountsFor=/mnt/dq05-lexar /mnt/dq05-lexar/cw-offload/bun /home/c03rad0r
+ActiveState=failed
+SubState=failed
+StartLimitIntervalUSec=5min
+StartLimitBurst=5
+Restart=always
+RestartUSec=5s
+Result=exit-code
+NRestarts=9
+ExecMainStatus=203
+ExecStartPre={ path=/home/c03rad0r/.hermes/scripts/routstrd_lane_guard.sh ; argv[]=/home/c03rad0r/.hermes/scripts/routstrd_lane_guard.sh --port 8008 ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }
+Environment=HOME=/home/c03rad0r ROUTSTRD_DIR=/home/c03rad0r/.routstrd ROUTSTRD_WALLET_DIR=/home/c03rad0r/.routstrd/wallet PATH=/home/c03rad0r/.bun/bin:/home/c03rad0r/.local/bin:/usr/local/bin:/usr/bin:/bin
+WorkingDirectory=/home/c03rad0r
+[exit=0]
+
+$ timeout 60 ssh -o BatchMode=yes CobradorWave 'crontab -l | grep -i routstr'
+# RETIRED 2026-09-20 (parked routstr / dead dq05) — */5 * * * * /home/c03rad0r/merchant-routing-engine/scripts/routstr_balance_cron.sh >> /home/c03rad0r/merchant-routing-engine/logs/routstr_balance_collector.log 2>&1 # routstr-balance-collector
+# RETIRED 2026-09-20 (parked routstr / dead dq05) — */5 * * * * /home/c03rad0r/merchant-routing-engine/scripts/routstrd_balance_cron.sh >> /home/c03rad0r/merchant-routing-engine/logs/routstrd_balance_collector.log 2>&1 # routstrd-balance-collector
+#Ansible: routstrd-funding-guard
+*/5 * * * * /home/c03rad0r/merchant-routing-engine/scripts/routstrd_funding_guard.py >> /home/c03rad0r/merchant-routing-engine/logs/routstrd_funding_guard.log 2>&1
+#Ansible: routstr-cost-probe daily
+0 3 * * * /usr/bin/python3 /home/c03rad0r/.hermes/profiles/manager/scripts/routstr_probe.py >> /home/c03rad0r/.hermes/logs/routstr_probe.log 2>&1
+35 3 * * * MSG=$(/home/c03rad0r/.hermes/hermes-agent/venv/bin/python /home/c03rad0r/.hermes/bot/src/routstr-revenue-digest.py 2>/dev/null); curl -s --max-time 30 -X POST http://localhost:8080/api/v1/rpc -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\",\"method\":\"send\",\"params\":{\"account\":\"+181****0908\",\"groupId\":\"V8tnIinI5Yh6wAqXj2vGa0PfJ27j6zHLgpeZJexODEA=\",\"message\":\"$MSG\"},\"id\":1}" > /dev/null 2>&1 # daily-revenue-digest
+# RETIRED 2026-09-20 (parked routstr / dead dq05) — */2 * * * * /usr/bin/python3 /home/c03rad0r/.hermes/scripts/dq05_headroom.py >> /home/c03rad0r/.hermes/logs/dq05-headroom.log 2>&1
+*/5 * * * * /home/c03rad0r/merchant-routing-engine/scripts/kalman_pricing_cron.sh >> /dev/null 2>&1 # b7-routstr-kalman-pricing-export
+# routstr-delist (ADR-007 Gate 4, t_ed376609): */2 cadence => 120s poll + 60s apply + 60s confirm <= 300s SLA
+# RETIRED 2026-09-20 (parked routstr / dead dq05) — */2 * * * * /usr/bin/python3 /home/c03rad0r/.hermes/bot/scripts/routstr_delist_preds.py --quiet >> /home/c03rad0r/.hermes/logs/routstr_delist.log 2>&1 # routstr-delist-preds
+# RETIRED 2026-09-20 (parked routstr / dead dq05) — */2 * * * * /usr/bin/python3 /home/c03rad0r/.hermes/bot/scripts/routstr_delist.py --preds /home/c03rad0r/.hermes/bot/routstr_delist_preds.json --nsec /home/c03rad0r/.hermes/bot/kalman_npub.nsec >> /home/c03rad0r/.hermes/logs/routstr_delist.log 2>&1 # routstr-delist-poll
+[exit=0]
+
+$ timeout 60 ssh -o BatchMode=yes CobradorWave 'curl -s -m 5 -o /dev/null -w http=%{http_code} http://127.0.0.1:8008/v1/models; echo; ss -ltnp 2>/dev/null | grep -c 8008'
+http=000
+0
+[exit=1]
+
+$ timeout 90 ssh -o BatchMode=yes CobradorWave 'cd ~/merchant-routing-engine && python3 scripts/routstrd_funding_guard.py --balance-json; echo rc=$?'
+{"balances": {"https://mint.minibits.cash/Bitcoin": 35514, "https://mint.orangesync.tech": 5000}, "network_sats": 35514, "source": "db", "wallet_db": "/home/c03rad0r/.routstrd/wallet/coco.db", "testnut_mint": "https://mint.orangesync.tech"}
+rc=0
+[exit=0]
+
+$ timeout 90 ssh -o BatchMode=yes CobradorWave 'cd ~/merchant-routing-engine && ROUTSTRD_CLI="" ROUTSTRD_WALLET_DB=/tmp/nope/coco.db python3 scripts/routstrd_funding_guard.py --balance-json; echo rc=$?'
+⚠️ funding guard: routstrd wallet read FAILED — daemon: routstrd daemon CLI not found (no `routstrd` on PATH and no bun + /home/c03rad0r/routstrd/dist/index.js) | db: wallet db missing: /tmp/nope/coco.db
+rc=2
+[exit=0]
+
+$ timeout 60 ssh -o BatchMode=yes CobradorWave 'sqlite3 "file:$HOME/.routstrd/wallet/coco.db?mode=ro" "select state, count(*), sum(amount) from coco_cashu_proofs group by state;"; echo "--- immutable:"; sqlite3 "file:$HOME/.routstrd/wallet/coco.db?immutable=1" "select count(*) from coco_cashu_proofs;"'
+ready|34|40514
+spent|64|11942
+--- immutable:
+98
+[exit=0]
+
+$ timeout 60 ssh -o BatchMode=yes CobradorWave 'ls -l ~/.cocod/coco.db ~/.cocod/cocod.sock 2>&1; ls -d ~/.cocod/wallet-migrated-* 2>/dev/null | head -3'
+ls: cannot access '/home/c03rad0r/.cocod/cocod.sock': No such file or directory
+-rw-r--r-- 1 c03rad0r c03rad0r 0 Sep 26 12:11 /home/c03rad0r/.cocod/coco.db
+/home/c03rad0r/.cocod/wallet-migrated-1790417464161
+[exit=0]

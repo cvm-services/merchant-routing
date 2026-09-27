@@ -1,0 +1,106 @@
+
+===== RUN 2 =====
+
+PLAY [51-routstrd-lane idempotency test] ***************************************
+
+TASK [51-routstrd-lane : Probe the toolchain backing ~/.bun (readlink -f + findmnt)] ***
+[WARNING]: Host 'localhost' is using the discovered Pytho
+########## ASSERTIONS ##########
+run1: changed=4 failed=0   (expect failed=0, changed>0 on first apply)
+run2: changed=0 failed=0   (expect changed=0 failed=0)
+
+########## FILE-LANDING CHECKS ##########
+OK   rendered unit -> $HOME/.config/systemd/user/routstrd.service
+OK   single-instance guard -> $HOME/.hermes/scripts/routstrd_lane_guard.sh
+OK   pinned wallet dir -> $HOME/.routstrd/wallet
+
+########## RENDERED UNIT ##########
+[Unit]
+Description=routstrd — Routstr daemon (buy lane 127.0.0.1:8008)
+Documentation=file:/tmp/routstrdlane.p79Zu8/home/.bun/install/global/node_modules/routstrd/SKILL.md
+After=network-online.target
+Wants=network-online.target
+# Mount ordering, pinned from the RESOLVED mount backing ~/.bun (readlink -f +
+# findmnt at converge time) instead of from someone's shell history. bun and the
+# routstrd package itself resolve into /tmp:
+#   ~/.bun -> /tmp/routstrdlane.p79Zu8/home/.bun
+# Starting before that mount is up loses the daemon's own entrypoint, and
+# Restart=always then spins on it.
+RequiresMountsFor=/tmp /tmp/routstrdlane.p79Zu8/home/.bun
+# Bounded restart (see defaults/main.yml: the 2026-09-20 park recorded a
+# restart-loop counter of 27753).
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+# The daemon entrypoint directly — NOT `routstrd start`, which double-forks a
+# background daemon (Type=simple would see the parent exit immediately and the
+# unit would flap). This is also verbatim how the hand-started stray was invoked,
+# so supervision does not change runtime behaviour.
+ExecStart=/tmp/routstrdlane.p79Zu8/home/.bun/bin/bun /tmp/routstrdlane.p79Zu8/home/.bun/install/global/node_modules/routstrd/dist/daemon/index.js --port 8008 --host 127.0.0.1
+# Single-instance guarantee: if anything else already holds the lane port — in
+# practice the hand-started stray — refuse to start and print the pid, cgroup and
+# the exact remediation (or reclaim, when routstrd_lane_reclaim_stray is on).
+ExecStartPre=/tmp/routstrdlane.p79Zu8/home/.hermes/scripts/routstrd_lane_guard.sh --port 8008
+Environment=HOME=%h
+# The wallet path is the whole point of this unit file: pin BOTH vars so the
+# daemon can never fall back to the legacy (now empty) ~/.cocod/coco.db.
+Environment=ROUTSTRD_DIR=%h/.routstrd
+Environment=ROUTSTRD_WALLET_DIR=%h/.routstrd/wallet
+# The daemon spawns `cocod` as a CHILD process for the Cashu wallet, resolving it
+# off PATH — so ~/.bun/bin must be on it.
+Environment=PATH=%h/.bun/bin:%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+WorkingDirectory=%h
+Restart=always
+RestartSec=5
+# Default KillMode=control-group: the cocod wallet child is torn down with the
+# daemon, so a restart never leaves two wallet holders behind.
+TimeoutStopSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
+OK   mount ordering pinned
+OK   wallet pinned to the NEW path
+OK   config dir pinned
+OK   Restart=always
+OK   restart is bounded
+OK   second-instance guard wired
+OK   boot-enabled (default.target)
+OK   no legacy ~/.cocod path in the unit's settings
+
+########## systemd-analyze verify ##########
+systemd-analyze --user verify rc=0
+
+RESULT: PASS — unit renders and verifies, run2 changed=0, all files landed.
+gine)] ***
+ok: [localhost]
+
+TASK [51-routstrd-lane : Warn when the funding-guard log dir is missing (its output would vanish)] ***
+skipping: [localhost]
+
+TASK [51-routstrd-lane : Restore the routstrd funding-guard cron (every 5 min, config-as-code)] ***
+skipping: [localhost]
+
+TASK [51-routstrd-lane : Record that the two balance collectors stay retired] ***
+ok: [localhost] => {
+    "msg": "Left retired on purpose (do not re-enable): routstr-balance-collector, routstrd-balance-collector — retired 2026-09-20 'parked routstr / dead dq05'. Only routstrd-funding-guard is restored; it is the entry that keeps the (now live, ~/.routstrd/wallet) wallet funded."
+}
+
+TASK [51-routstrd-lane : Lane status] ******************************************
+ok: [localhost] => {
+    "msg": [
+        "unit      : routstrd.service (user scope, enabled at boot)",
+        "endpoint  : 127.0.0.1:8008",
+        "wallet    : /tmp/routstrdlane.p79Zu8/home/.routstrd/wallet",
+        "mount pin : RequiresMountsFor=/tmp",
+        "cron      : routstrd-funding-guard */5 * * * * -> /tmp/routstrdlane.p79Zu8/home/merchant-routing-engine/scripts/routstrd_funding_guard.py",
+        "state     : not started (check mode, skipped, or not this node)"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=15   changed=0    unreachable=0    failed=0    skipped=8    rescued=0    ignored=0   
+
