@@ -1,48 +1,54 @@
 # Offload review — routstr delist, findings 4–5 (atomicity/idempotence, SLA)
 
-Independent re-derivation. Scope, per the original task
-(`docs/reviews/routstr_delist_review.md`): item **4 (atomicity + idempotence)**
-and item **5 (5-minute SLA arithmetic)**. Every claim below was produced this
-session against the CURRENT artifact set — nothing is carried over unverified
-from earlier passes.
+Independent re-derivation, this session, against the CURRENT artifact set.
+Scope, per the original task (`docs/reviews/routstr_delist_review.md`): item
+**4 (atomicity + idempotence)** and item **5 (5-minute SLA arithmetic)**.
+Nothing below is carried over unverified from earlier passes; every line
+reference and every behavioural claim was re-read or re-executed this session.
 
 Artifact md5s (this session): script `2ea724ef08d857cd7b88a957300e70b4`
-(byte-identical to repo `src/routstr_delist.py`), deployed contract suite
+(byte-identical to repo `src/routstr_delist.py`), deployed suite
 `031851b356f0de4089512f02f13f05cc` (byte-identical to repo
-`tests/test_routstr_delist_contract.py`, cited `contract:N`), docs
+`tests/test_routstr_delist_contract.py`, cited `contract:N`), stand-in doc
 `e385af98b9c142eec736672d4dcca290` (byte-identical to repo
 `docs/routstr-delist.md`, cited `docs:N`), repo unit suite
 `293b0459b636a918cf1cce57bf922473` (`unit:N`).
 
 **Artifact-path status (required report).**
 `~/.hermes/bot/docs/routstr_delist_contract.md` — **MISSING — HIGH.** The path
-does not exist; `~/.hermes/bot/docs/` holds only `routstr-delist.md` and
+does not exist; `~/.hermes/bot/docs/` contains only `routstr-delist.md` and
 `reviews/`, and a recursive search for any `*contract*` artifact under
-`~/.hermes` (and under this repo) returns the empty set. The mandated contract
+`~/.hermes` returns the empty set (6th consecutive pass). The mandated contract
 document is therefore unreviewable; the stand-in reviewed is the design/contract
 doc `~/.hermes/bot/docs/routstr-delist.md` (197 lines), cited below as `docs:N`.
 `~/.hermes/bot/scripts/routstr_delist.py` (829 lines) and
 `~/.hermes/bot/tests/test_routstr_delist.py` (752 lines) both exist and were
 read end-to-end; the script is byte-identical to repo `src/routstr_delist.py`
 (`routstr_delist.py:N` applies to both) and the deployed suite is byte-identical
-to repo `tests/test_routstr_delist_contract.py`. The loader fallback
+to repo `tests/test_routstr_delist_contract.py`. The loader fallback at
 `contract:47-54` resolves `../scripts`, so the deployed suite tests the deployed
 script.
 
-**Executed this session (live, read-only):** repo `python3 -m pytest
+**Executed this session (read-only):** repo `python3 -m pytest
 tests/test_routstr_delist.py tests/test_routstr_delist_contract.py -q` →
-**121 passed** (96 unit + 25 contract); deployed rig `cd ~/.hermes/bot &&
-python3 -m pytest tests/test_routstr_delist.py -q` → **25 passed**. The
-hermetic probe set (`docs/reviews/routstr_f45_probes/probe_f45.py`,
-`routstr_f45_probes/probe_f45_relist.py`; `tempfile.mkdtemp()` only, no artifact
-touched) was re-run and reproduced the discarded `save_state` return (4.2), the
-durable-flag falsification (4.3), the SLA boundary at exactly t=300 (5.3), and
-the string-typed `pulled_models` wrong relist (4.8). Live re-read:
-`~/.hermes/bot/routstr_delist_state.json` keys are `delisted`, `last_dry_run`,
-`last_reason`, `snapshot`, `ts` — `delisted: true`, `last_reason: "manual
-override"`, **no `pulled_models`**, no `consecutive_failures`/`blocked`. (The
-live crontab was not re-read this session, so the cadence claim in 5.4 rests on
-code, not crontab inspection.)
+**121 passed** (96 unit + 25 contract, 0.80 s); deployed rig `cd ~/.hermes/bot
+&& python3 -m pytest tests/test_routstr_delist.py -q` → **25 passed** (0.44 s).
+Four hermetic probes (`/tmp/f45_review/probe_f45_pass8.py`; tempdir only, the
+real `main()` driven against a fake backend that EXECUTES the real payloads on
+an in-memory sqlite; no network, no artifact touched) reproduced the silent
+persist failure (4.2), the durable-flag falsification (4.3), the string-typed
+`pulled_models` wrong relist (4.8) and the exact SLA boundary (5.3). Greps
+re-run: `save_state(` = 8 bare call sites (:565, :622, :629, :638, :654, :710,
+:732, :752) + 1 def; lock primitives (`flock|fcntl|lockf|O_EXCL|threading|
+multiprocessing`) = **0 hits**; refusal keywords (`relist_refused|relist_any|
+relist-any`) = **10 hits in the repo unit suite, 0 in the deployed contract
+suite**; `POLL_CADENCE_S` = 4 hits, all definition/comment (:66, :67, :72, :73),
+none a runtime comparison; `getmtime` = 1 hit (:493, the feed-freshness guard).
+Live `~/.hermes/bot/routstr_delist_state.json` keys are `delisted`,
+`last_dry_run`, `last_reason`, `snapshot`, `ts` (`delisted: true`,
+`last_reason: "manual override"`, no `pulled_models`, no
+`consecutive_failures`/`blocked`). Live `crontab -l` = **zero routstr
+entries** (greps empty).
 
 ## Finding 4 — Atomicity and idempotence — **MEDIUM**
 
@@ -54,43 +60,45 @@ same-directory tmp file (`.{basename}.{pid}.tmp`, `routstr_delist.py:230`),
 cleanup in `finally` (`routstr_delist.py:240-245`). The swap is pinned by
 `contract:636-663` (old bytes complete at dst at swap time + complete new bytes
 in tmp, exactly one `os.replace`, no `*.tmp` litter) and a simulated
-pre-replace crash by `contract:665-686`. Torn reads of the state file are no
-longer possible. Caveat found this pass: `os.fsync` is monkeypatched to a no-op
+pre-replace crash by `contract:665-686`. Torn reads of the state file are not
+possible. Caveat re-confirmed this pass: `os.fsync` is monkeypatched to a no-op
 both in the shared rig (`contract:257`) and inside Case 10 itself
-(`contract:634`), so the **durability** half of the protocol is nowhere
-exercised — the suite pins the `os.replace` swap, not fsync. Severity: **OK**
-(atomicity); the durability caveat is folded into 4.5.
+(`contract:634`) — so the **durability** half of the protocol is nowhere
+exercised; the suite pins the `os.replace` swap, not fsync. Case 10's own
+comment claims the opposite ("real fsync, no rig", `contract:254-256`), so the
+comment is stale/misleading. Severity: **OK** (atomicity); the durability
+caveat is folded into 4.5.
 
 **4.2 — Every persistence failure is silent: `save_state`'s False is discarded
 at all eight call sites — MEDIUM.** `save_state` returns True/False
-(`routstr_delist.py:237`, `routstr_delist.py:239`) and every caller invokes it as
-a bare statement — re-enumerated by grep this session: `routstr_delist.py:565`,
+(`routstr_delist.py:237`, `routstr_delist.py:239`) and every caller invokes it
+as a bare statement — re-enumerated by grep this session: `routstr_delist.py:565`,
 `:622`, `:629`, `:638`, `:654`, `:710`, `:732`, `:752` (8 sites). Executed probe
 (Probe 4.2) drives the real `main()` with the state path unmakeable (parent is a
-file, so `os.makedirs` fails):
+file, so `os.makedirs` fails at `routstr_delist.py:229`):
 
-    PROBE 4.2 rc=0 action=delist state_exists=False
+    PROBE 4.2 rc=0 action=delist state_exists=False calls=['pull', 'verify']
 
-The remote SALE **is** pulled (`action=delist`), yet no state file is created,
-the durable `delisted` flag the whole flag-mechanism depends on
+The remote SALE **is** pulled and independently confirmed, yet no state file is
+created, the durable `delisted` flag the whole flag-mechanism depends on
 (`routstr_delist.py:263`, `docs:122-123`) is absent, and cron still sees exit 0.
 Severity: **MEDIUM** (must-fix: check the return at all eight sites and exit
 non-zero).
 
 **4.3 — The failure path FALSIFIES a valid durable `delisted` flag — MEDIUM.**
 `routstr_delist.py:726` assigns `state["delisted"] = False` **unconditionally**
-on an unconfirmed delist, whatever the flag was before. Trigger 2 is level-based
-by design (`docs:50-53`), so a re-fire on an already-delisted node is normal; if
-the pull lands but the independent re-fetch flakes, the run takes the failure
-path and downgrades `delisted` from true to false while the listing really is
-pulled. Executed probe (Probe 4.3):
+on an unconfirmed delist, whatever the flag held before. Trigger 2 is
+level-based by design (`docs:50-53`), so a re-fire on an already-delisted node is
+normal; if the pull lands but the independent re-fetch flakes, the run takes the
+failure path and downgrades `delisted` from true to false while the listing
+really is pulled. Executed probe (Probe 4.3):
 
-    run1 rc=0 delisted=True  pulled=['A', 'B']
-    run2 rc=1 action=delist_failed delisted=False fails=1
+    PROBE 4.3 run1 rc=0 action=delist delisted=True pulled=['A', 'B', 'C']
+              run2 rc=1 action=delist_failed delisted=False fails=1
 
 `pulled_models` survives (the failure path never touches it,
 `routstr_delist.py:725-729`), so recovery is possible — but the durable flag now
-contradicts the remote reality the run itself tried to establish at
+contradicts the remote reality the run itself established at
 `routstr_delist.py:683`. Chained: a purely **verification-channel** flake
 increments `fails` (`routstr_delist.py:724`) and, on the third such run, opens
 the breaker (`routstr_delist.py:730-731`, exit 3 at `:739`); the open breaker
@@ -141,15 +149,15 @@ second `--relist` refuses instead of blanket-enabling — pinned
 `contract:490-507`. (d) Remote idempotence holds: `UPDATE models SET enabled=0
 WHERE enabled=1` (`routstr_delist.py:355`) matches 0 rows on a repeat; the
 relist payload is parameterized (`routstr_delist.py:378-397`, placeholders
-`routstr_delist.py:390-394`). Severity: **OK**.
+`routstr_delist.py:390`). Severity: **OK**.
 
 **4.7 — The DEPLOYED suite pins none of the refusal paths — MEDIUM (deployment
 asymmetry).** Grep this session: `relist_refused|relist_any|relist-any` → **10
-hits in the repo unit suite, 0 hits in the deployed contract suite**. The refusal
-(`routstr_delist.py:600-611`) and opt-in (`routstr_delist.py:602`) behaviours are
-pinned only by a suite that is not deployed; a regression there ships green
-through all 25 deployed tests — which are the tests that run on this host.
-Separately, no test executes two consecutive `--relist` runs, so the pop at
+hits in the repo unit suite, 0 hits in the deployed contract suite** (rc=1). The
+refusal (`routstr_delist.py:600-611`) and opt-in (`routstr_delist.py:602`)
+behaviours are pinned only by a suite that is not deployed; a regression there
+ships green through all 25 deployed tests — which are the tests that run on this
+host. Separately, no test executes two consecutive `--relist` runs, so the pop at
 `routstr_delist.py:635` is unpinned in both suites. Severity: **MEDIUM** as a
 deployment asymmetry, because the live artifact set is the deployed copy.
 
@@ -162,7 +170,7 @@ probe (Probe 4.8) with a hand-edited `{"delisted": true, "pulled_models": "AB"}`
 — the raw string reaches `relist()` unchecked (`routstr_delist.py:601`), and
 `relist_payload`'s `list(names or [])` (`routstr_delist.py:381`) explodes it:
 
-    PROBE 4.8 rc=0 names=AB
+    PROBE 4.8 rc=0 names='AB'
     payload: ...UPDATE models SET enabled=1 WHERE name IN (?,?)',['A', 'B']...
 
 `list("AB")` silently becomes two model names `A`, `B` — no crash, no refusal, a
@@ -223,9 +231,8 @@ feeds `ACTION_BUDGET_S` (`routstr_delist.py:73`), consumed as a real deadline at
 exercises it — MEDIUM.** The identity holds with equality: 240 + (30 + 30) = 300.
 Executed probe (Probe 5.3):
 
-    POLL=240 BUDGET=60 SSH=30 WINDOW=300
-    POLL+BUDGET=300  (== WINDOW? True)   <300? False
-    240 + 30 + 30 = 300 ; <300? False
+    PROBE 5.3 POLL=240 BUDGET=60 SSH=30 WINDOW=300
+              POLL+BUDGET=300 (==WINDOW? True)  confirm=300 (<WINDOW? False)
 
 So `contract:568`'s assertion `confirmed_t - sample_t < rd.TRIGGER_ACTION_WINDOW_S`
 is **False** at the true boundary; `contract:559` hard-codes `round_trip_s = 25.0`,
@@ -245,10 +252,12 @@ found no comparison of consecutive state `ts` values and no validation that the
 real cron interval equals `POLL_CADENCE_S` (the only `POLL_CADENCE_S` references
 are the definition at `routstr_delist.py:72`, the `ACTION_BUDGET_S` derivation at
 `:73`, and comments at `:66-67`). The single mtime check
-(`routstr_delist.py:493`) is the feed-freshness guard, unrelated to cadence.
-Detection is charged at a full cadence as an *assumption*; if the runner is wired
-at `*/5` instead, the worst case is 300 + 60 = 360 s and the SLA is breached by
-construction — reachable because nothing pins the cadence. Severity: **MEDIUM**.
+(`routstr_delist.py:493`) is the feed-freshness guard, unrelated to cadence. Live
+`crontab -l` this session carries **zero routstr entries** (`docs:112-115`
+concedes this), so no cadence is wired at all. Detection is charged at a full
+cadence as an *assumption*; if the runner is wired at `*/5` instead, the worst
+case is 300 + 60 = 360 s and the SLA is breached by construction — reachable
+because nothing pins the cadence. Severity: **MEDIUM**.
 
 **5.5 — The event channel sits outside the window — LOW.** The optional
 kind-30078 publish runs after confirmation with its own `timeout=30`
@@ -275,21 +284,22 @@ clamps every round-trip, success requires an independent re-fetch, retries are
 bounded, and docs carry matching `*/4` arithmetic pinned by a fake-clock case and
 config-identity cases in both suites. It does **not** yet hold robustly: the
 240 + 60 split consumes the entire 300 s window with exactly zero slack (5.3),
-the detection term is an unverified assumption (5.4), and the event signal can
-land up to 30 s past the window (5.5).
+the detection term is an unverified assumption that is not even wired live (5.4),
+and the event signal can land up to 30 s past the window (5.5).
 
 ---
 
 Provenance: offload re-derivation pass on artifact set script md5 `2ea724ef`,
-contract suite md5 `031851b3`, docs md5 `e385af98`, unit suite md5 `293b0459`.
-Evidence is per-pass: both artifact copies read end-to-end, the loader fallback
-re-verified, both suites executed fresh (121 repo + 25 deployed), greps re-run
-(save_state call sites = 8, lock primitives = 0, refusal keywords = 10 unit vs 0
-deployed, no cadence/ts-delta logic), the live state file re-read, and the
-four read-only behavioural probes re-run in `tempfile.mkdtemp()`. 4.1/4.6/5.1/5.2
-confirmed implemented-and-pinned; 4.2, 4.3, 4.4, 4.7, 4.8, 4.9, 5.3, 5.4, 5.5,
-5.6 confirmed and line-referenced afresh. No artifact was modified. `~/.hermes/bot`
-is not a git repository, so the local commit lands in the workspace repo
-(`/home/c03rad0r/repos/merchant-routing`) at `docs/reviews/findings_4_5.md`, with
-this identical copy at the task-mandated bot path
-`~/.hermes/bot/docs/reviews/findings_4_5.md`. Not pushed, per the task body.
+contract suite md5 `031851b3`, stand-in docs md5 `e385af98`, unit suite md5
+`293b0459`. Evidence is per-pass: both artifact copies read end-to-end, the
+loader fallback re-verified, both suites executed fresh (121 repo + 25 deployed),
+greps re-run (save_state call sites = 8 bare, lock primitives = 0, refusal
+keywords = 10 unit vs 0 deployed, POLL_CADENCE_S = 0 runtime comparisons, no
+ts-delta/cadence logic), the live state file and live crontab re-read, and the
+four read-only behavioural probes re-run in `tempfile.mkdtemp()`.
+4.1/4.6/5.1/5.2 confirmed implemented-and-pinned; 4.2, 4.3, 4.4, 4.5, 4.7, 4.8,
+4.9, 5.3, 5.4, 5.5, 5.6 confirmed and line-referenced afresh. No artifact was
+modified. `~/.hermes/bot` is not a git repository, so the local commit lands in
+the workspace repo (`/home/c03rad0r/repos/merchant-routing`) at
+`docs/reviews/findings_4_5.md`, with this identical copy at the task-mandated bot
+path `~/.hermes/bot/docs/reviews/findings_4_5.md`. Not pushed, per the task body.
