@@ -1,0 +1,68 @@
+pass27 probe: 50/50 checks passed
+  [PASS] 7b: exactly one while loop  — [671]
+  [PASS] 7b: no `while True`
+  [PASS] 7b: for loops finite/in-memory  — [112, 146, 297, 204]
+  [PASS] 7b: comprehensions  — [110, 597, 694, 746, 479, 308, 312]
+  [PASS] 7b: subprocess.run sites == 2  — [(459, True), (808, True)]
+  [PASS] 7b: every subprocess.run carries timeout=
+  [PASS] 7b: shell=True count == 0
+  [PASS] 6: while bound is `attempts < MAX_PULL_ATTEMPTS`  — attempts < MAX_PULL_ATTEMPTS
+  [PASS] 6: `attempts += 1` is body-first statement  — attempts += 1
+  [PASS] 6: BREAKER_THRESHOLD == 3
+  [PASS] 6: MAX_PULL_ATTEMPTS == 2
+  [PASS] 7e: save_state return ignored at every call site  — calls=8 bare=8 at [752, 565, 638, 654, 710, 732, 622, 629]
+  [PASS] 6: int exit codes present {0,1,3}  — [0, 1, 3]
+  [PASS] 7a: NOSTR_SECRET_KEY appears (env-only path)  — [429, 460]
+  [PASS] 6: 3 dead-node runs -> rcs [1,1,3]  — [1, 1, 3]
+  [PASS] 6: durable blocked=true after trip  — {'blocked': True, 'consecutive_failures': 3, 'delisted': False, 'last_pull_error': {'action': 'delist', 'res': {'action': 'pull', 'error': 'ssh down', 'ok': False, 'rc': 255}, 'ts': 1790587858.0932105}, 'ts': 1790587858.0932105}
+  [PASS] 6: durable consecutive_failures == 3  — 3
+  [PASS] 6: 3 runs x 2 pulls, zero verify  — ['pull', 'pull', 'pull', 'pull', 'pull', 'pull']
+  [PASS] 6: blocked run rc 3 on healed node  — rc=3
+  [PASS] 6: blocked run action=blocked  — {
+  "action": "blocked",
+  "blocked": true,
+  "consecutive_failures": 3,
+  "ok": false,
+  "reason": "circuit breaker ope
+  [PASS] 6: blocked run makes ZERO remote calls  — []
+  [PASS] 6: --unblock + healed -> rc 0 delist  — rc=0 action=delist
+  [PASS] 6: --unblock reset counter/blocked  — {'consecutive_failures': 0, 'blocked': False}
+  [PASS] 6: --status rc 0, read-only  — {
+  "blocked": false,
+  "consecutive_failures": 0,
+  "delisted": true,
+  "last_r
+  [PASS] 6a: quiet run leaves stale counter intact  — mid=2 after=2
+  [PASS] 6e: bool seeded counter admitted (isinstance hole)  — 2
+  [PASS] 6c: failed relist does NOT tick the counter  — rc=1 fails=2
+  [PASS] 6c: successful relist resets the counter  — rc=0 fails=0
+  [PASS] 6d: blocked refuses --dry-run (rc 3, zero spawns)  — rc=3 calls=[]
+  [PASS] 6d: --unblock --dry-run clears breaker for REAL  — keys=['delisted', 'ts']
+  [PASS] 7a: exactly ONE nak spawn  — 1
+  [PASS] 7a: --env-sec present, --sec absent  — ['/home/c03rad0r/.local/bin/nak', 'event', '--kind', '30078', '--tag', 'd:routstr-delist', '--tag', 't:routstr', '--content', '{"delisted":true,"ts":1790587858.185735,"tag":"routstr-delist"}', '--env-sec', 'wss://relay.primal.net', 'wss://nos.lol', 'wss://relay.damus.io']
+  [PASS] 7a: secret NOT on argv
+  [PASS] 7a: secret ONLY in child env
+  [PASS] 7a: kind 30078 + d:routstr-delist on argv
+  [PASS] 7a: relays on argv
+  [PASS] 7a: secret absent from stdout
+  [PASS] 7a: secret absent from durable state
+  [PASS] 7a: state keys are credential-free  — ['blocked', 'consecutive_failures', 'delisted', 'last_reason', 'pulled_models', 'ts']
+  [PASS] 7c: dry-run spawns ZERO subprocesses (even nak)  — spawns=[] rc=0
+  [PASS] 7c: fresh dry delist writes only last_dry_run/ts  — ['last_dry_run', 'ts']
+  [PASS] 7c: relist --dry-run preserves breaker+delisted+pulled_models+snapshot  — {'delisted': True, 'pulled_models': ['a'], 'consecutive_failures': 1, 'snapshot': {'z': 1.0}}
+  [PASS] 7c: dry failure exits 1, only last_dry_run/ts  — rc=1 ['last_dry_run', 'ts']
+  [PASS] 6(real CLI): 5 dead runs -> rcs [1,1,3,3,3]  — [1, 1, 3, 3, 3]
+  [PASS] 6(real CLI): ssh invocations per run [2,2,2,0,0]  — [2, 2, 2, 0, 0]
+  [PASS] 6(real CLI): last blocked run stdout carries remedy  — {
+  "action": "blocked",
+  "blocked": true,
+  "consecutive_failures": 3,
+  "ok": false,
+  "reason": "circuit breaker open after 3 consecutive failed runs; re-run with --unblock to clear",
+  "ts": 1790
+  [PASS] 6(real CLI): verify never reached (only UPDATE payloads)
+  [PASS] 6b: fail-open — CLI says blocked/rc3 while disk keeps fails=2  — rc=3 cli_blocked=True disk=2
+  [PASS] 6: argparse misuse -> rc 2  — rc=2
+  [PASS] 7d: zero routstr cron entries (loop latent)  — 0
+
+failed: []

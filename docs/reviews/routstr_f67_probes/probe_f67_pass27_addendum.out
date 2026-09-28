@@ -1,0 +1,7 @@
+pass27 addendum: 6/6 checks passed
+  [PASS] setup: confirmed delist sets delisted=True  — True
+  [PASS] 6f: a failed fired run flips delisted True->False (src:726)  — before=True after=False rc=1
+  [PASS] contrast: quiet run preserves delisted=True  — True
+  [PASS] 7e: zero TODO/FIXME/XXX/HACK markers  — []
+  [PASS] 7e: no os.chmod in save_state (default umask)  — []
+  [PASS] 7e: state file mode is umask-derived (no 0600)  — mode=0o664 umask=0o2

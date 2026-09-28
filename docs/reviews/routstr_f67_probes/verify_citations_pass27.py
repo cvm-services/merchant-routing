@@ -1,0 +1,163 @@
+#!/usr/bin/env python3
+"""Pass-27 citation verifier: every file:line reference intended for
+findings_6_7.md must resolve to the expected substring on the DEPLOYED
+artifacts. Read-only."""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+BOT = Path.home() / ".hermes/bot"
+FILES = {
+    "src": BOT / "scripts/routstr_delist.py",
+    "contract": BOT / "tests/test_routstr_delist.py",
+    "docs": BOT / "docs/routstr-delist.md",
+}
+LINES = {k: p.read_text().splitlines() for k, p in FILES.items()}
+
+# (tag, line, expected substring)
+CITES = [
+    # ── Finding 6 ────────────────────────────────────────────────────────
+    ("src", 75, "MAX_PULL_ATTEMPTS = 2"),
+    ("src", 77, "BREAKER_THRESHOLD = 3"),
+    ("src", 73, "ACTION_BUDGET_S = TRIGGER_ACTION_WINDOW_S - POLL_CADENCE_S"),
+    ("src", 544, 'fails = state.get("consecutive_failures", 0)'),
+    ("src", 545, "isinstance(fails, int) else 0"),
+    ("src", 546, 'blocked = bool(state.get("blocked"))'),
+    ("src", 548, "if args.status:"),
+    ("src", 554, '"consecutive_failures": fails'),
+    ("src", 555, '"blocked": blocked'),
+    ("src", 557, "return 0"),
+    ("src", 561, "if args.unblock and blocked:"),
+    ("src", 565, "save_state(args.state, state)"),
+    ("src", 569, "if blocked:"),
+    ("src", 572, '{"action": "blocked", "ok": False, "blocked": True,'),
+    ("src", 576, "--unblock to clear"),
+    ("src", 578, "return 3"),
+    ("src", 600, "if args.relist:"),
+    ("src", 626, "if not res.get(\"ok\"):"),
+    ("src", 636, 'state["consecutive_failures"] = 0'),
+    ("src", 637, 'state["blocked"] = False'),
+    ("src", 649, 'fire = args.delist or dec["fire"]'),
+    ("src", 651, "if not fire:"),
+    ("src", 654, "save_state(args.state, state)"),
+    ("src", 660, "return 1 if (preds_error or preds_stale) else 0"),
+    ("src", 666, "backend = _SshBackend("),
+    ("src", 667, "deadline = time.monotonic() + ACTION_BUDGET_S"),
+    ("src", 671, "while attempts < MAX_PULL_ATTEMPTS:"),
+    ("src", 672, "attempts += 1"),
+    ("src", 675, "if not args.dry_run and attempts < MAX_PULL_ATTEMPTS and"),
+    ("src", 676, "time.monotonic() < deadline:"),
+    ("src", 683, 'if vres.get("ok") is True and vres.get("count") == 0:'),
+    ("src", 695, "if attempts < MAX_PULL_ATTEMPTS and time.monotonic() < deadline:"),
+    ("src", 719, "if not confirmed:"),
+    ("src", 724, "fails += 1"),
+    ("src", 730, "newly_blocked = fails >= BREAKER_THRESHOLD"),
+    ("src", 731, 'state["blocked"] = newly_blocked'),
+    ("src", 732, "save_state(args.state, state)"),
+    ("src", 739, "return 3 if newly_blocked else 1"),
+    ("src", 750, 'state["consecutive_failures"] = 0'),
+    ("src", 751, 'state["blocked"] = False'),
+    ("src", 829, "raise SystemExit(main())"),
+    ("src", 152, "isinstance(unc, bool)"),
+    ("docs", 76, "Circuit breaker (task body)"),
+    ("docs", 79, "--unblock`. Any confirmed success (delist or relist) resets the counter."),
+    ("docs", 153, "Exit codes"),
+    ("docs", 154, "`3` **BLOCKED**"),
+    ("docs", 87, "Dry-run is intent-only"),
+    ("docs", 126, "--sec"),
+    ("docs", 128, "Best-effort"),
+    ("docs", 112, "Deployment note"),
+    ("contract", 581, "class TestCircuitBreaker"),
+    ("contract", 582, "def test_three_consecutive_failures_block_with_exit_3"),
+    ("contract", 591, "assert rcs == [1, 1, 3]"),
+    ("contract", 594, "'\"blocked\": true' in raw"),
+    ("contract", 597, "rd.BREAKER_THRESHOLD"),
+    ("contract", 599, 'rig.node.kinds() == ["pull"] * 6'),
+    ("contract", 601, "def test_blocked_run_refuses_all_remote_action"),
+    ("contract", 611, 'out["action"] == "blocked"'),
+    ("contract", 612, "len(rig.node.calls) == calls_before"),
+    ("contract", 614, "def test_unblock_clears_breaker_and_next_run_succeeds"),
+    ("contract", 624, 'st["consecutive_failures"] == 0'),
+    # ── Finding 7 ────────────────────────────────────────────────────────
+    ("src", 437, "if not sec_file or not os.path.isfile(sec_file):"),
+    ("src", 438, "return None"),
+    ("src", 442, 'argv = [nak, "event", "--kind", str(DELIST_EVENT_KIND),'),
+    ("src", 446, '"--env-sec"]'),
+    ("src", 451, "def publish_delist_event(sec_file"),
+    ("src", 458, "nsec = fh.read().strip()"),
+    ("src", 459, "subprocess.run(argv, timeout=30,"),
+    ("src", 460, "env=dict(os.environ, NOSTR_SECRET_KEY=nsec),"),
+    ("src", 462, "except Exception:"),
+    ("src", 463, "pass"),
+    ("src", 464, "return argv"),
+    ("src", 112, "for p in preds_now:"),
+    ("src", 146, "for p in preds:"),
+    ("src", 204, "for p in preds:"),
+    ("src", 297, "for k, v in prev_snapshot.items():"),
+    ("src", 110, "prev_map = {_pred_key(p): _hours(p)"),
+    ("src", 309, "for a in accel"),
+    ("src", 312, "max(v['uncertainty'] for v in var)"),
+    ("src", 479, "return [d for d in data if isinstance(d, dict)]"),
+    ("src", 597, 'preds = [p for p in raw_preds if p.get("key") == args.preds_key]'),
+    ("src", 694, 'res["verify"] = {k: vres.get(k) for k in ("ok", "count", "error", "rc")}'),
+    ("src", 746, "merged = list(prior) + [n for n in pulled if n not in prior]"),
+    ("src", 808, "proc = subprocess.run(cmd, capture_output=True, text=True,"),
+    ("src", 800, "timeout = SSH_TIMEOUT_S"),
+    ("src", 806, "timeout = min(SSH_TIMEOUT_S, remaining)"),
+    ("src", 797, "if dry_run:"),
+    ("src", 799, '"cmd": " ".join(cmd[:2])'),
+    ("src", 615, "if args.dry_run:"),
+    ("src", 622, "save_state(args.state, state)"),
+    ("src", 635, 'state.pop("pulled_models", None)'),
+    ("src", 639, "if args.nsec:"),
+    ("src", 640, "publish_delist_event(args.nsec, delisted=False)"),
+    ("src", 699, "if args.dry_run:"),
+    ("src", 710, "save_state(args.state, state)"),
+    ("src", 717, "return 0 if confirmed else 1"),
+    ("src", 755, "if args.nsec:"),
+    ("src", 756, "publish_delist_event(args.nsec, delisted=True)"),
+    ("src", 221, "def save_state(path, state):"),
+    ("src", 825, 'return {"ok": False, "action": action, "error": str(exc)}'),
+    ("src", 629, "save_state(args.state, state)"),
+    ("src", 638, "save_state(args.state, state)"),
+    ("src", 622, "save_state(args.state, state)"),
+    ("contract", 690, "class TestSecretHygiene"),
+    ("contract", 691, 'SECRET = "nsec1TESTSECRETqxNEVERuseMEinPROD"'),
+    ("contract", 726, '"--env-sec" in argv and "--sec" not in argv'),
+    ("contract", 727, 'env.get("NOSTR_SECRET_KEY") == self.SECRET'),
+    ("contract", 728, '"30078" in [str(a) for a in argv]'),
+    ("contract", 729, '"d:routstr-delist" in argv'),
+    ("contract", 743, '"delisted" not in st'),
+    ("contract", 744, '"last_dry_run" in st'),
+    ("contract", 752, '.get("delisted") is True'),
+    ("contract", 50, 'for _cand in (_HERE.parent / "src", _HERE.parent / "scripts"):'),
+    # ── references introduced by this report ─────────────────────────────
+    ("src", 429, 'nsec_env="NOSTR_SECRET_KEY"'),
+    ("src", 726, 'state["delisted"] = False'),
+    ("src", 651, "if not fire:"),
+    ("src", 652, "state = update_state(state, ts=time.time(), preds=preds,"),
+    ("src", 653, 'delisted=state.get("delisted", False))'),
+    ("src", 640, "publish_delist_event(args.nsec, delisted=False)"),
+    ("src", 756, "publish_delist_event(args.nsec, delisted=True)"),
+    ("src", 245, "pass"),
+    ("contract", 1, "frozen contract: docs/routstr-delist.md"),
+    ("contract", 726, '"--env-sec" in argv and "--sec" not in argv'),
+    ("contract", 729, '"d:routstr-delist" in argv'),
+    ("docs", 115, "dq05 cannot host it"),
+    ("docs", 122, "**Flag**"),
+    ("docs", 123, "publisher reads"),
+    ("docs", 126, "ps aux"),
+    ("docs", 89, "The intent is recorded in `last_dry_run` only."),
+]
+
+bad = []
+for tag, ln, want in CITES:
+    have = LINES[tag][ln - 1] if 0 < ln <= len(LINES[tag]) else "<OOB>"
+    if want not in have:
+        bad.append((tag, ln, want, have))
+
+print(f"citation check: {len(CITES) - len(bad)}/{len(CITES)} resolve")
+for tag, ln, want, have in bad:
+    print(f"  MISMATCH {tag}:{ln}\n    want: {want!r}\n    have: {have!r}")
+sys.exit(1 if bad else 0)
