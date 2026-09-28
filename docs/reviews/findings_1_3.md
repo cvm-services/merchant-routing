@@ -8,7 +8,7 @@ Severity: HIGH (requested contract path missing); code-level safety OK.
   contract path is a HIGH documentation/audit-trail defect; the review below uses
   the existing files.
 - Remote ssh command is built as one quoted string passed as a single argv
-  element at `~/.hermes/bot/scripts/routstr_delist.py:423-424`:
+  element at `~/.hermes/bot/scripts/routstr_delist.py:414-425`:
   `remote = " ".join(["docker", "exec", shlex.quote(container), "python3", "-c", shlex.quote(payload)])`.
   `shlex.quote` on both `--container` and `--payload` blocks remote-shell
   metacharacter injection via the container name or payload boundary.
@@ -20,13 +20,13 @@ Severity: HIGH (requested contract path missing); code-level safety OK.
   constant; `relist_payload()` at
   `~/.hermes/bot/scripts/routstr_delist.py:378-397` builds a parameterized
   `WHERE name IN (?,...)` clause and embeds the captured model names only as a
-  Python repr (`{names!r}`) while the values are bound separately.
+  Python repr (`{names!r}`) while the values are bound separately by sqlite3.
 - The kind-30078 event builder uses `--env-sec` at
-  `~/.hermes/bot/scripts/routstr_delist.py:442-446` and passes the nsec via the
+  `~/.hermes/bot/scripts/routstr_delist.py:429-448` and passes the nsec via the
   `NOSTR_SECRET_KEY` environment variable in `publish_delist_event()` at
   `~/.hermes/bot/scripts/routstr_delist.py:451-464`; the secret never appears on
   the argv surface. This is asserted by
-  `~/.hermes/bot/tests/test_routstr_delist.py:705-729`.
+  `~/.hermes/bot/tests/test_routstr_delist.py:689-729`.
 
 Code-level injection and secret-exposure safety are OK once the missing contract
 path is restored.
