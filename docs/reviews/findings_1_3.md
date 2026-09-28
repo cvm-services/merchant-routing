@@ -1,4 +1,4 @@
-# Findings 1–3 Review: routstr_delist — twentieth independent offload pass
+# Findings 1–3 Review: routstr_delist — twenty-first independent offload pass
 
 Scope (per the original task): finding 1 safety (delisting the routstr SALE must
 never disable the routstr provider or touch the T470 flat-router ladder),
@@ -22,21 +22,21 @@ a defect in the script or its tests.
 **Duplicate-dispatch disclosure.** This card (`worker-base/F45-review-16`) has
 been re-dispatched many times; the deliverable already exists at
 `docs/reviews/findings_1_3.md` (creating commit `11e40f9`; commits touching the
-path to date: 38). Its own convention — and this card's acceptance criterion —
+path to date: 39). Its own convention — and this card's acceptance criterion —
 is exactly three `## Finding` sections, so every prior pass **rewrote** the file
 in place rather than appending a §N section (the append convention used on other
 boards would break the exactly-three rule). This pass does the same: it
 re-derives the three findings from the current artifacts — whose md5s were
 measured unchanged this pass, not assumed — and rewrites the file. Ordinal
-convention: the immediately prior revision titled itself the *nineteenth*
-independent offload pass and committed as `4594d48`; this pass is therefore the
-**twentieth** by that (the file's own preamble) convention. There is no usable
-`fleet offload` note sequence in this file (grep returns 0 substantive notes),
-so the preamble ordinal is the operative integer. **Result of the re-derivation:
-no correction to the prior revision was required** — all three findings
-re-measured to the same vector (F1 OK with LOW gaps; F2 OK with a MEDIUM
-residual; F3 OK with a MEDIUM residual), and every `path:N` citation in this
-file is audited line-by-line by the fresh probe below. Artifacts untouched.
+convention: the immediately prior revision titled itself the *twentieth*
+independent offload pass and committed as `6907b67`; this pass is therefore the
+**twenty-first** by that (the file's own preamble) convention. There is no
+usable `fleet offload` note sequence in this file (grep returns 0 substantive
+notes), so the preamble ordinal is the operative integer. **Result of the
+re-derivation: no correction to the prior revision was required** — all three
+findings re-measured to the same vector (F1 OK with LOW gaps; F2 OK with a
+MEDIUM residual; F3 OK with a MEDIUM residual), and every `path:N` citation in
+this file is audited line-by-line by the fresh probe below. Artifacts untouched.
 
 Citation legend: `routstr_delist.py:N` = the script (both copies, byte-identical);
 `contract:N` = repo `tests/test_routstr_delist_contract.py` (the 25-case
@@ -45,15 +45,16 @@ main suite); `docs:N` = `docs/routstr-delist.md`.
 
 Verification performed this pass (all hermetic; scratch outside `/tmp`): the
 script, both suites and the stand-in doc read end-to-end; a fresh probe,
-`docs/reviews/routstr_f13_probes/probe_f13_pass19.py`, exercising **211 checks**
-(A=129 citation audit, B=22 safety, C=14 confirmation, D=32 fail-safe, E=14
+`docs/reviews/routstr_f13_probes/probe_f13_pass21.py`, exercising **212 checks**
+(A=122 citation audit, B=13 safety, C=14 confirmation, D=32 fail-safe, E=13
 review-record integrity) executed **twice with byte-identical transcript sha256
-`513d76e9079e42291cc8e733d07caba7f43be2fc5029fe5b64d1a727b1c41980` → 211/211
-PASS**, with zero FAIL lines; repo suite `python3 -m pytest tests/ -q` → **121
-passed** (96 main + 25 contract); deployed suite
-`cd ~/.hermes/bot && python3 -m pytest tests/test_routstr_delist.py -q` → **25
-passed**; both with `TMPDIR` off this host's full `/tmp` tmpfs. The bot mirror
-of this file is byte-identical to the repo copy (probe E7).
+`24f696c81ca13ed6c44a38a99fb11ce2642a82b4c4aa7b676197b09786a1ffab`
+→ 212/212 PASS**, with zero FAIL lines; repo suite
+`python3 -m pytest tests/ -q` → **121 passed** (96 main + 25 contract); deployed
+suite `cd ~/.hermes/bot && python3 -m pytest tests/test_routstr_delist.py -q` →
+**25 passed**; both with `TMPDIR` off this host's `/tmp` tmpfs (41 % used this
+pass). The bot mirror of this file is byte-identical to the repo copy (probe
+E7).
 
 ---
 
