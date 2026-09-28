@@ -1,96 +1,59 @@
-# Review Findings 1-3: Safety, Confirmation, Fail-safe
+# Review findings 1–3: safety, confirmation, fail-safe
 
-Reviewed artifacts (worker-base, 2026-09-28):
-
+Artifacts reviewed:
+- `~/.hermes/bot/docs/routstr_delist_contract.md` — **MISSING**
+- `~/.hermes/bot/docs/routstr-delist.md` — read as fallback
 - `~/.hermes/bot/scripts/routstr_delist.py`
 - `~/.hermes/bot/tests/test_routstr_delist.py`
-- **Requested contract file** `~/.hermes/bot/docs/routstr_delist_contract.md` — **MISSING**. The frozen contract is instead at `~/.hermes/bot/docs/routstr-delist.md`. This review was performed against the existing `routstr-delist.md` contract.
+
+No artifacts were modified.
 
 ---
 
-## Finding 1 — Safety: remote command construction
+## Finding 1 — BLOCKER: required contract file is missing
 
-Severity: **MEDIUM**
+**Severity:** BLOCKER
 
-`build_ssh_docker_cmd()` correctly shell-quotes the container name and the Python payload before handing them to the remote shell via a single ssh command string (`~/.hermes/bot/scripts/routstr_delist.py:423-425`).
+The task explicitly named `~/.hermes/bot/docs/routstr_delist_contract.md` as a review artifact. That file does not exist on disk. The review therefore cannot be anchored to the prescribed contract document. The implementation and tests appear to have been written against `~/.hermes/bot/docs/routstr-delist.md` instead.
 
 Evidence:
+- `read_file ~/.hermes/bot/docs/routstr_delist_contract.md` returned `File not found: /home/c03rad0r/.hermes/bot/docs/routstr_delist_contract.md` with a similar-file hint of `/home/c03rad0r/.hermes/bot/docs/routstr-delist.md`.
 
-- `~/.hermes/bot/scripts/routstr_delist.py:423-425`:
-
-```python
-remote = " ".join(["docker", "exec", shlex.quote(container),
-                   "python3", "-c", shlex.quote(payload)])
-return ["ssh", ssh_target, remote]
-```
-
-- The payload string is built by `pull_listing_payload()` (`~/.hermes/bot/scripts/routstr_delist.py:364-375`), `relist_payload()` (`~/.hermes/bot/scripts/routstr_delist.py:378-397`), and `verify_pull_payload()` (`~/.hermes/bot/scripts/routstr_delist.py:400-411`). All of them are then quoted by `shlex.quote`, preventing injection from the model-name data pulled from the remote database.
-
-- `test_routstr_delist.py:468-489` (`TestSemanticGuardLadderUntouched`) proves the executed payloads never name `upstream_providers` and only touch the `models` listing table — the provider ladder is left byte-identical.
-
-Concern: `ssh_target` is inserted into the argv list without validation or quoting. Because ssh parses leading `-` arguments as options, a malicious or misconfigured `--ssh-target` beginning with `-oProxyCommand=...` would be parsed by ssh as an option before the hostname is reached. The default target is hard-coded and the CLI override is operator-controlled, so exploitation requires a config compromise, but the script does not defend against it.
-
-Recommendation: validate `ssh_target` with a strict parser (e.g. `user@host[:port]` only) or pass the user separately via `ssh -l <user> <host>` so a leading dash cannot be interpreted as an ssh option.
+Until the requested contract file exists or the task references are updated, this finding is blocking.
 
 ---
 
-## Finding 2 — Confirmation: independent post-pull re-fetch
+## Finding 2 — HIGH: confirmation-by-re-fetch is implemented but the test suite does not regression-test the production SSH/shell-quoting path
 
-Severity: **OK**
+**Severity:** HIGH
 
-The implementation satisfies the requirement that a delist is confirmed by an independent read-only re-fetch rather than by the pull's self-report.
+The script correctly gates a fired delist on a second, read-only listings fetch (`_SshBackend.verify`) rather than on the pull's own self-report. However, every test in the contract suite mocks the backend at the `FakeSellNode` level and executes payloads directly via `exec()`, bypassing `_SshBackend._run`, `build_ssh_docker_cmd`, and the actual `subprocess.run` SSH path. No test round-trips the shell-quoted remote command through `shlex.split` or exercises an adversarial container/payload to prove shell injection is impossible.
 
 Evidence:
+- `~/.hermes/bot/scripts/routstr_delist.py:414-425` `build_ssh_docker_cmd` shell-quotes `container` and `payload` before building the remote command string.
+- `~/.hermes/bot/scripts/routstr_delist.py:790-793` `verify` runs the independent `SELECT COUNT(*) FROM models WHERE enabled=1` payload.
+- `~/.hermes/bot/scripts/routstr_delist.py:682-688` success is gated on `vres.get("ok") is True and vres.get("count") == 0`.
+- `~/.hermes/bot/scripts/routstr_delist.py:719-739` unconfirmed pulls exit non-zero, do not consume the baseline, and do not set `delisted=true`.
+- `~/.hermes/bot/tests/test_routstr_delist.py` `FakeSellNode.execute` calls `exec(payload, g)` with a patched `sqlite3`; it never calls `build_ssh_docker_cmd` or `_SshBackend._run`.
+- Content search for `shlex`, `shell`, `quote`, or `build_ssh` in `~/.hermes/bot/tests/test_routstr_delist.py` returned zero hits.
 
-- `~/.hermes/bot/scripts/routstr_delist.py:400-411` defines the verify payload:
-
-```python
-def verify_pull_payload():
-    return (
-        "import sqlite3,json;"
-        "db=sqlite3.connect('/app/data/keys.db');"
-        "n=db.execute('SELECT COUNT(*) FROM models WHERE enabled=1')"
-        ".fetchone()[0];"
-        "print(json.dumps({'ok':True,'count':n}))"
-    )
-```
-
-- `~/.hermes/bot/scripts/routstr_delist.py:671-697` performs up to `MAX_PULL_ATTEMPTS` pulls; after each successful pull it runs `backend.verify()` and only sets `confirmed = True` when the re-fetch reports `count == 0`.
-
-- `~/.hermes/bot/scripts/routstr_delist.py:719-739` shows the failure path: unconfirmed pulls do **not** set `delisted=true`, do **not** consume the acceleration baseline, and exit non-zero so cron/monitoring sees the failure.
-
-- `test_routstr_delist.py:318-345` (`TestBurnAccelerationDelist.test_acceleration_fires_exactly_one_delist_verified_by_refetch`) asserts `out["confirmed"] is True`, `out["verified_count"] == 0`, and that the second call is the verify payload containing `SELECT COUNT(*) FROM models` with no `UPDATE`.
-
-- `test_routstr_delist.py:346-360` (`TestBurnAccelerationDelist.test_unverified_pull_is_a_failed_delist`) tests the lying-pull case: when `pull_lands=False`, the re-fetch refutes the pull, the run exits 1, and the state records `consecutive_failures` without setting `delisted=true`.
-
-No defect identified.
+The design is sound, but the transport-safety and subprocess confirmation paths are not empirically covered by the prescribed test artifact.
 
 ---
 
-## Finding 3 — Fail-safe: stale/corrupt feed handling and baseline preservation
+## Finding 3 — HIGH: fail-safe stale/corrupt feed handling is implemented but the corrupt-feed baseline-preservation path lacks an explicit regression test
 
-Severity: **OK**
+**Severity:** HIGH
 
-The fail-safe semantics documented in the contract are implemented and tested.
+The script correctly fail-closes on stale or unreadable prediction feeds: unparseable `--preds` is treated as a feed error, stale feeds are treated as dead data, and the acceleration baseline is never overwritten with an empty prediction list. The CLI exits non-zero when only a stale/failed feed exists and no trigger fired.
 
 Evidence:
+- `~/.hermes/bot/scripts/routstr_delist.py:485-496` `feed_is_stale` returns `True` when the file age cannot be determined.
+- `~/.hermes/bot/scripts/routstr_delist.py:582-585` `preds_error = bool(args.preds) and not raw_preds` marks explicitly requested-but-unusable feeds as an error.
+- `~/.hermes/bot/scripts/routstr_delist.py:589-593` a stale feed zeroes out `raw_preds` before baseline updating.
+- `~/.hermes/bot/scripts/routstr_delist.py:651-660` the quiet/no-fire path exits `1` when `preds_error or preds_stale`.
+- `~/.hermes/bot/scripts/routstr_delist.py:248-268` `update_state` only overwrites `snapshot` when `preds` is truthy, preserving the previous baseline on empty/unusable feeds.
 
-- Stale feed guard: `~/.hermes/bot/scripts/routstr_delist.py:485-497` (`feed_is_stale`) treats any failure to determine the file's age (OSError) as stale and returns `False` only for a file provably fresh (0 ≤ age ≤ `STALENESS_S`).
-
-- Stale feed never drives a trigger or refreshes baseline: `~/.hermes/bot/scripts/routstr_delist.py:589-593` zeroes `raw_preds` when the feed is stale, and `update_state()` at `~/.hermes/bot/scripts/routstr_delist.py:248-268` only overwrites the stored `snapshot` when `preds` is truthy. The baseline is therefore preserved on stale or empty input.
-
-- Explicit feed-error reporting: `~/.hermes/bot/scripts/routstr_delist.py:582-585` sets `preds_error = True` when `--preds` is supplied but yields no predictions, and `main()` at `~/.hermes/bot/scripts/routstr_delist.py:651-660` exits non-zero in that case while still preserving the stored baseline.
-
-- Manual override is never gated on freshness: `~/.hermes/bot/scripts/routstr_delist.py:580` computes `override` before feed processing, and `~/.hermes/bot/tests/test_routstr_delist.py:427-433` (`TestManualOverride.test_manual_override_is_never_gated_on_feed_staleness`) confirms a stale feed still allows a manual delist.
-
-- Circuit breaker protects against repeated failure: `~/.hermes/bot/scripts/routstr_delist.py:543-578` reads the `blocked` marker; three consecutive failures (`BREAKER_THRESHOLD`, line 77) cause exit code 3 and refusal of all remote action until `--unblock` is used. A confirmed success resets the counter.
-
-No defect identified.
+What is missing is an explicit test that a corrupt, non-empty `--preds` file (for example, valid JSON that is not a list of dicts) does not wipe the stored baseline. The test file asserts stale and missing-feed behavior, but not corrupt-feed baseline preservation.
 
 ---
-
-## Finding 4 — Missing requested contract artifact
-
-Severity: **HIGH**
-
-The task body directed the reviewer to read `~/.hermes/bot/docs/routstr_delist_contract.md`. That file does not exist. The frozen contract is instead at `~/.hermes/bot/docs/routstr-delist.md`. Review was performed against the existing `routstr-delist.md` and the deployed code/tests. If `routstr_delist_contract.md` was intended to be the authoritative task-0 contract, it should be restored or task references should be updated to the existing path.
