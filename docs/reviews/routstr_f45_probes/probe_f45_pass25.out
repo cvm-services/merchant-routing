@@ -1,0 +1,30 @@
+F4.0 constants {"save_state_src_lines": "221-245"}
+F4.1 atomic-protocol-tokens {"fcntl": 0, "flock": 0, "fsync": 1, "lock": 16, "os_replace": 1, "tmp_named_file": 1}
+F4.P1 atomic-swap {"final_is_new": true, "ok": true, "pre_dst_is_old": true, "swaps": 1, "tmp_is_complete_new": true, "tmp_litter": []}
+F4.P2 crash-before-replace {"ok": false, "previous_intact": true, "tmp_litter": []}
+F4.P3 persist-failure-silent-on-success {"action": "delist", "confirmed": true, "durable_delisted_flag": false, "durable_pulled_models": "<absent>", "note": "remote pull landed but the durable flag the publisher reads was never written", "rc": 0, "remote_actually_delisted": true, "state_file_changed": false, "stdout_ok": true}
+F4.4 return-value-consumed {"assignment_sites": [], "call_sites": [565, 622, 629, 638, 654, 710, 732, 752], "verdict": "all 8 call sites discard the bool; save_state's False is never surfaced (no exit-code change, no JSON field)"}
+F4.P5 fsync-called {"fds": 1, "n": 1}
+F4.P5 real-fsync-on-this-host {"stalled": false}
+F4.P6 suite-fsync-suppression {"note": "Rig and TestAtomicStateWrites both null os.fsync; fsync durability is never asserted by any test", "sites": [[257, "monkeypatch.setattr(os, \"fsync\", lambda fd: None)"], [634, "monkeypatch.setattr(os, \"fsync\", lambda fd: None)"]]}
+F4.P7 re-delist-merge {"clobbered": false, "confirmed": true, "first_pulled": ["gpt-4o", "claude-3-5-sonnet", "llama-3.1-405b"], "merged_pulled": ["gpt-4o", "claude-3-5-sonnet", "llama-3.1-405b"], "rc": [0, 0], "second_ok": true, "second_pulled_capture": []}
+F4.P8 blanket-relist-refused {"action": "relist_refused", "models_after": {"claude-3-5-sonnet": 1, "gpt-4o": 1, "llama-3.1-405b": 1, "operator-disabled-model": 0}, "ok": false, "rc": 1, "remote_calls": 0}
+F4.P8 relist-any-optin {"action": "relist", "rc": 0, "remote_calls": 0}
+F4.P9 last-writer-wins {"a_bytes": 48, "b_bytes": 48, "final": "B", "interlocks": 0}
+F4.P10 breaker-durability-with-save-failing {"documented": true, "durable_blocked": null, "durable_failures": null, "note": "every run reports the same in-memory count because the persist silently fails; the 'durable BLOCKED marker' is not durable \u2014 run 4 was NOT refused", "rcs": [1, 1, 1, 1]}
+F4.P11 flag-loss-reconciliation {"delist_action": "delist", "delist_rc": 0, "durable_delisted": false, "durable_pulled_models": "<absent>", "next_run_action": "none", "note": "remote listing stays pulled while the publisher-read flag is false; no code path ever reconciles the flag against the node", "recon_payloads": ["pull", "verify"], "remote_pulled": true}
+F4.P11 verify-is-read-only-count {"verify_used_for_reconciliation": false}
+F5.0 constants {"ACTION_BUDGET_S": 60, "MAX_PULL_ATTEMPTS": 2, "POLL_CADENCE_S": 240, "SSH_TIMEOUT_S": 30, "TRIGGER_ACTION_WINDOW_S": 300, "arithmetic_holds": true, "two_rt_fits": true}
+F5.1 consumption {"const": "TRIGGER_ACTION_WINDOW_S", "non_comment_reads": [71]}
+F5.1 consumption {"const": "POLL_CADENCE_S", "non_comment_reads": [72]}
+F5.1 consumption {"const": "ACTION_BUDGET_S", "non_comment_reads": [73]}
+F5.1 consumption {"const": "SSH_TIMEOUT_S", "non_comment_reads": [74, 773]}
+F5.1 consumption {"const": "MAX_PULL_ATTEMPTS", "non_comment_reads": [75, 671, 675, 695]}
+F5.1b ast-name-loads {"ACTION_BUDGET_S": [667, 612], "BREAKER_THRESHOLD": [730, 575], "MAX_PULL_ATTEMPTS": [671, 695, 675], "POLL_CADENCE_S": [73], "SSH_TIMEOUT_S": [800, 806], "TRIGGER_ACTION_WINDOW_S": [73]}
+F5.1c runtime-read-verdict {"ACTION_BUDGET_S": "read at [667, 612]", "MAX_PULL_ATTEMPTS": "read at [671, 695, 675]", "POLL_CADENCE_S": "NEVER read anywhere \u2014 declaration+comment only", "SSH_TIMEOUT_S": "read at [800, 806]", "TRIGGER_ACTION_WINDOW_S": "never read at runtime (only consumed at src:73 to derive ACTION_BUDGET_S)"}
+F5.Q3 deadline-enforced {"action": "delist", "action_elapsed": 50.0, "confirmed": true, "detection_s": 240, "rc": 0, "round_trips": [{"kind": "pull", "remaining": 60.0, "t": 240.0, "timeout": 30}, {"kind": "verify", "remaining": 35.0, "t": 265.0, "timeout": 30}], "within_budget": true, "within_window": true}
+F5.Q4 publish-unclamped {"action": "delist", "action_budget_s": 60, "action_phase_s": 90.0, "action_start": 240.0, "breaches_action_budget": true, "breaches_window": true, "confirmed": true, "detection_to_done_s": 330.0, "done_t": 330.0, "nak_clamped_to_deadline": true, "nak_publish_timeouts": [30], "rc": 0, "sample_t": 0.0, "window_s": 300}
+F5.Q4b worst-case-verified-instant {"confirmed": true, "equality": true, "rc": 0, "strictly_under_300": false, "t_from_sample": 300.0, "window": 300}
+F5.Q4c nak-ignores-remaining-budget {"confirmed": true, "exceeds_remaining": true, "nak_requested_timeout": 30, "rc": 0, "remaining_before_nak": 10.0}
+F5.Q5 retry-unreachable-at-worst-case {"action": "delist_failed", "attempts_used": 1, "max_pull_attempts": 2, "rc": 1, "retry_ran": false, "round_trips": ["pull", "verify"]}
+F5.Q6 crontab {"doc_says_unwired": true, "documented_cadence_min": 4, "entries": [], "routstr_entries": 0}
