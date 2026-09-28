@@ -1,0 +1,10 @@
+citation tokens seen : 126
+resolved             : 126
+  contract: 19
+  docs: 11
+  src: 96
+finding sections     : 2
+  ## Finding 6 — circuit breaker (3 failed attempts → BLOCKED, exit code 3) — **OK** (residuals **LOW**)
+  ## Finding 7 — hygiene (secrets, loops) — **OK** (residuals **LOW**)
+failures             : 0
+RESULT: PASS

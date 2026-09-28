@@ -1,0 +1,54 @@
+========================================================================
+GROUP A — artifact identity / task-path report
+========================================================================
+[PASS] A1 required contract md MISSING at bot path (HIGH)  -- /home/c03rad0r/.hermes/bot/docs/routstr_delist_contract.md absent; rglob('*contract*') under /home/c03rad0r/.hermes/bot -> 0 hits
+[PASS] A2 deployed script md5  -- 2ea724ef08d857cd7b88a957300e70b4
+[PASS] A3 deployed suite md5  -- 031851b356f0de4089512f02f13f05cc
+[PASS] A4 bot doc md5  -- e385af98b9c142eec736672d4dcca290
+[PASS] A5 script byte-identical repo<->bot
+[PASS] A6 suite byte-identical repo<->bot
+[PASS] A7 doc byte-identical repo<->bot
+[PASS] A8 line counts 829 script / 752 suite / 197 doc  -- 829/752/197
+[PASS] A9 deployed suite loader tries ../src then ../scripts  -- lines 49-54
+[PASS] A10 bot has no src/ copy of the script (scripts/ is the live path)  -- ~/.hermes/bot/src/routstr_delist.py absent
+[PASS] A11 crontab has zero routstr entries (operational loop latent)  -- rc=0, routstr hits=0
+[PASS] A12 live state keys inside credential-free allowlist  -- keys=['delisted', 'last_dry_run', 'last_reason', 'snapshot', 'ts']
+========================================================================
+GROUP B — Finding 6: circuit breaker (real CLI subprocess + in-process)
+========================================================================
+[PASS] B1 five dead-node runs -> rcs [1,1,3,3,3] (trip on run 3)  -- rcs=[1, 1, 3, 3, 3]
+[PASS] B2 per-run ssh deltas [2,2,2,0,0] (attempt 4+ never runs)  -- deltas=[2, 2, 2, 0, 0]
+[PASS] B3 all 6 pre-trip round-trips are pull payloads; verify never reached  -- pulls=6 verifies=0
+[PASS] B4 durable BLOCKED marker + counter==3 written at trip  -- blocked=True fails=3
+[PASS] B5 while BLOCKED every remote action refuses rc3 with 0 round-trips  -- --relist:rc3/blocked/0calls; --manual:rc3/blocked/0calls; --manual --dry-run:rc3/blocked/0calls; --relist --relist-any:rc3/blocked/0calls
+[PASS] B6 --status rc0 read-only, reports both breaker fields, does not clear  -- rc=0 blocked=True fails=3
+[PASS] B7 --unblock heals and the same run delists (rc0, fails0, blocked false)  -- rc=0 action=delist confirmed=True delisted=True fails=0
+[PASS] B8 exit space {0,1,2,3}: bogus=2 quiet=0 preds_error=1 healthy-dry=0  -- bogus=2 quiet=0 preds_error=1 dry=0
+[PASS] B9 a FAILED relist never ticks the breaker (src:626-632)  -- rc=1 action=relist_failed fails=2 blocked=None (no breaker key written)
+[PASS] B10 a SUCCESSFUL relist resets the counter (src:636-637)  -- rc=0 fails=0 pulled_models_present=False
+[PASS] B11 no decay: 2 stale fails survive a quiet run, then ONE new fail trips  -- after-quiet fails=2 rc_fail=3 fails_after_fail=3 blocked=True
+[PASS] B12 bool type-guard hole: seeded true + 1 fail -> disk counter 2 (src:545)  -- rc=1 fails=2 (bool admitted by isinstance(int))
+[PASS] B13 fail-open: trip prints rc3/blocked true while disk keeps fails 2 (src:732)  -- printed rc=3 blocked=True | disk fails=2 blocked=None
+[PASS] B14 a failed fired run force-clears the durable delisted flag (src:726)  -- rc=1 delisted=False (baseline preserved)
+[PASS] B15 AST: exactly 1 while, 0 while-True, 2 subprocess.run, both timeout=, 0 shell=True  -- while=1 whileTrue=0 for=4 comps=7 run=2 timeout=2 shell=0 ospawn=0
+[PASS] B15b while loop is bounded by attempts < MAX_PULL_ATTEMPTS with body-first +=  -- attempts < MAX_PULL_ATTEMPTS
+[PASS] B16 all 8 save_state call sites are bare Expr (return value never checked)  -- calls=8 bare=8 lines=[565, 622, 629, 638, 654, 710, 732, 752]
+========================================================================
+GROUP C — Finding 7: hygiene (secrets / loops / dry-run / ops / perms)
+========================================================================
+[PASS] C1 exactly ONE nak spawn; --env-sec present, --sec absent, secret ONLY in child env  -- spawns=1 env_sec=True sec=False env_only=True
+[PASS] C2 secret absent from stdout, argv and the durable state file  -- argv_tail=['wss://relay.primal.net', 'wss://nos.lol', 'wss://relay.damus.io']
+[PASS] C3 build_delist_event -> None when the nsec file is missing
+[PASS] C4 a failed publish is swallowed (except Exception: pass) -> rc unaffected  -- publish_delist_event src:462-464
+[PASS] C5 dry-run spawns ZERO subprocesses even with --nsec wired  -- rc=0 spawns=0
+[PASS] C6 seeded state survives --relist --dry-run (all four keys intact)  -- kept=['consecutive_failures', 'delisted', 'last_dry_run', 'pulled_models', 'snapshot', 'ts']
+[PASS] C7 a fresh dry delist writes exactly [last_dry_run, ts]  -- keys=['last_dry_run', 'ts']
+[PASS] C8 dry-FAILURE branch exits 1 and writes only last_dry_run/ts (no breaker tick)  -- rc=1 keys=['consecutive_failures', 'delisted', 'last_dry_run', 'ts'] fails=2
+[PASS] C9 healthy real-CLI run = exactly 2 round-trips (1 pull + 1 verify)  -- rc=0 action=delist round_trips=2
+[PASS] C9b lying-node real-CLI run bounded to 2 attempts then fails (rc1)  -- rc=1 action=delist_failed round_trips=4 (2 x [pull+verify])
+[PASS] C10 state file mode is umask-default 0o664 (no credential material)  -- mode=0o664 keys=['blocked', 'consecutive_failures', 'delisted', 'last_reason', 'pulled_models', 'ts']
+[PASS] C11 no os.chmod / no TODO-FIXME-XXX-HACK marker anywhere in the module  -- 0 chmod, 0 markers
+[PASS] C12 module text has exactly 2 subprocess.run sites and no shell=True  -- subprocess.run=2 timeout=2
+========================================================================
+SUMMARY: 42/42 checks passed
+artifacts untouched: True
