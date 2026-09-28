@@ -1,6 +1,6 @@
 # Offload review — routstr delist, findings 4–5 (atomicity/idempotence, SLA)
 
-Independent re-derivation, this session (18th offload pass), of item **4
+Independent re-derivation, this session (19th offload pass), of item **4
 (atomicity + idempotence)** and item **5 (5-minute SLA arithmetic)** as
 specified in the original task (`docs/reviews/routstr_delist_review.md:158`
 and `:196`). Every `file:line` below was re-read this session and every
@@ -10,11 +10,15 @@ carried over from an earlier pass.
 **Artifact-path status (required report).**
 - `~/.hermes/bot/docs/routstr_delist_contract.md` — **MISSING — HIGH.** The
   exact path named in the task does not exist (`ls` → ENOENT this session);
-  `~/.hermes/bot/docs/` contains only `routstr-delist.md` and `reviews/`. The
-  mandated contract document is therefore unreviewable. The contract/design
-  stand-in actually reviewed is `~/.hermes/bot/docs/routstr-delist.md` — 197
+  `~/.hermes/bot/docs/` contains only `routstr-delist.md` and `reviews/`, and
+  a targeted search under `~/.hermes` found no `*contract*.md`. The mandated
+  contract document is therefore unreviewable at that path. The contract/design
+  document that actually exists — and that the suite itself calls the "frozen
+  contract" (`contract:1`) — is `~/.hermes/bot/docs/routstr-delist.md`, 197
   lines, md5 `e385af98b9c142eec736672d4dcca290`, byte-identical to repo
-  `docs/routstr-delist.md` (equal md5) — cited below as `docs:N`.
+  `docs/routstr-delist.md` (equal md5). It is cited below as `docs:N`. Treat
+  this as a naming/path defect in the task body or the layout, not as a
+  missing design: the substance was reviewable under the stand-in path.
 - `~/.hermes/bot/scripts/routstr_delist.py` — exists, **829 lines**, read
   end-to-end, md5 `2ea724ef08d857cd7b88a957300e70b4`, byte-identical to repo
   `src/routstr_delist.py` (`diff -q` rc 0) — cited as `routstr_delist.py:N`.
@@ -31,25 +35,28 @@ carried over from an earlier pass.
 
 **Executed this session (read-only, no artifact touched).**
 - repo `python3 -m pytest tests/test_routstr_delist.py
-  tests/test_routstr_delist_contract.py -q` → **121 passed** (0.55 s).
+  tests/test_routstr_delist_contract.py -q` → **121 passed** (0.73 s).
 - deployed `cd ~/.hermes/bot && python3 -m pytest tests/test_routstr_delist.py
-  -q` → **25 passed** (0.32 s).
-- hermetic probe `docs/reviews/routstr_f45_probes/probe_f45_pass18.py` drives
+  -q` → **25 passed** (0.37 s).
+- hermetic probe `docs/reviews/routstr_f45_probes/probe_f45_pass19.py` drives
   the DEPLOYED script in-process (fake backend, tempdir state, forced
   `os.replace` failures, real `rd.main()`) → **15/15 probes PASS**, exit 0. Raw
-  probe lines are quoted per-item below.
+  probe lines are quoted per-item below. (The single first-run FAIL,
+  `5c_cadence_arithmetic`, was a sign error in my own probe arithmetic, not an
+  artifact defect; corrected and re-run green.)
 - static/AST checks: lock primitives
   (`flock|fcntl|lockf|O_EXCL|threading|multiprocessing`) = **0 hits**;
-  `os.open|O_DIRECTORY` = **0 hits**; AST count of bare `save_state(...)`
-  expression statements = **8** (`routstr_delist.py` lines
-  565,622,629,638,654,710,732,752), return discarded at all 8; AST `main()`
-  returns = 10 (557,578,611,625,632,644,660,717,739,764) — never a `save_state`
-  result; `crontab -l` = **zero routstr entries**; live
+  `os.open|O_DIRECTORY` = **0 hits** (`os.open` attribute count 0,
+  `O_DIRECTORY` 0); AST count of bare `save_state(...)` expression statements =
+  **8** (`routstr_delist.py` lines 565,622,629,638,654,710,732,752), return
+  discarded at all 8; AST `main()` returns = 10
+  (557,578,611,625,632,644,660,717,739,764) — **none** a `save_state` result;
+  `crontab -l` = **zero routstr entries**; live
   `~/.hermes/bot/routstr_delist_state.json` = keys `delisted`(true),
   `last_dry_run`, `last_reason`, `snapshot`({}), `ts` — **no `pulled_models`,
   no `consecutive_failures`, no `blocked`**.
 
-## Finding 4 — Atomicity and idempotence — **MEDIUM**
+## Finding 4 — Atomicity and idempotence — MEDIUM
 
 The original finding-4 defect (`docs/reviews/routstr_delist_review.md:158-194`)
 is resolved on both counts: the state write is now atomic
@@ -81,11 +88,11 @@ complaint.
 sites discard the return value** (`routstr_delist.py:565,:622,:629,:638,:654,
 :710,:732,:752`; AST-confirmed this session as bare expression statements) and
 `main()` never inspects it (10 returns at `:557,:578,:611,:625,:632,:644,
-:660,:717,:739,:764`, none a `save_state` result). A persist failure (ENOSPC,
-EROFS, permission, rename failure) therefore yields a run that prints
-`"action":"delist"`, `"ok":true`, `"confirmed":true` and exits **0** while the
-durable state on disk is stale. Probe `4b_silent_persist_failure` (pre-existing
-state seeded `delisted:false`, `snapshot:{zai<US>1h:10.0}`,
+:660,:717,:739,:764`, none a `save_state` result — AST-confirmed). A persist
+failure (ENOSPC, EROFS, permission, rename failure) therefore yields a run that
+prints `"action":"delist"`, `"ok":true`, `"confirmed":true` and exits **0**
+while the durable state on disk is stale. Probe `4b_silent_persist_failure`
+(pre-existing state seeded `delisted:false`, `snapshot:{zai<US>1h:10.0}`,
 `consecutive_failures:2`; forced `os.replace` failure on the state path) →
 `rc=0 action=delist confirmed=True disk_unchanged=True
 disk={'ts': 1, 'delisted': False, 'snapshot': {'zai\x1f1h': 10.0},
@@ -96,9 +103,9 @@ advertisement flag the design depends on is never flipped; `--status`
 (`:548-557`) then re-reads the stale value and cron sees exit 0 — the failure
 is invisible. Neither suite asserts that `main()` surfaces a `save_state`
 failure: the only return-value assertions live inside `TestAtomicStateWrites`
-(`contract:643,:657,:682`) and the unit-suite hits (`unit:282,:289,:296`) call
-`save_state` directly, never through `main()`. Must-fix: have the 8 call sites
-check the return and exit non-zero (or at least warn) when a
+(`contract:643,:657,:682`) and the unit-suite hits call `save_state` directly
+(`unit:278-280,:289,:296`) — never through `main()`. Must-fix: have the 8 call
+sites check the return and exit non-zero (or at least warn) when a
 delist/relist/breaker transition fails to persist. This contradicts
 `docs:64-68` ("a failed pull … exits non-zero so cron/monitoring sees it") in
 the persist-failure case.
@@ -116,9 +123,11 @@ durable marker `state["blocked"] = True` (`:731`) never lands. Probe
 distinct harms: (a) `docs:76-79`'s "`blocked: true` (**durable**)" and
 `contract:594`'s `'"blocked": true' in raw` are both violated — the marker
 lives only in the process; (b) no `--unblock` is possible while the marker is
-absent, and the operator's only durable signal (`--status`) says the breaker is
-closed. Restart-from-disk never converges. Probe `4b3` is the reason this
-finding is MEDIUM rather than LOW.
+absent (`--unblock` clears `blocked`/`consecutive_failures` at `:561-567`, and
+the next run re-reads `blocked:false` at `:546`), and the operator's only
+durable signal (`--status`, `:548-557`) says the breaker is closed.
+Restart-from-disk never converges. Probe `4b3` is the reason this finding is
+MEDIUM rather than LOW.
 
 **4.4 — No inter-process lock around the read-modify-write of the state file — LOW.**
 Grep `flock|fcntl|lockf|O_EXCL|threading|multiprocessing` over the script =
@@ -128,18 +137,21 @@ an ssh round-trip when the next tick fires) each write last-writer-wins, so a
 concurrent relist and delist can lose an update. `os.replace` guarantees each
 individual write is atomic, not that the read-modify-write is serialised.
 Probe `4g_interleaved_lost_update` (two interleaved `load_state` → mutate →
-`save_state` sequences on one path, mimicking two runs) →
-`final={'delisted': False, 'ts': 2}` — run A's `delisted=True` + `pulled_models`
-update is silently clobbered by run B. Impact is bounded (the remote actions
-are idempotent; the `*/4` cadence with short runs makes overlap unlikely), but
-the original "no locking … last writer wins" remnant holds.
+`save_state` sequences on one path, mimicking two runs; B commits
+`{ts:2, delisted:False}` from the pre-A snapshot, then A commits its stale
+snapshot carrying `{ts:3, delisted:True, pulled_models:['m1']}`) →
+`final={'delisted': True, 'pulled_models': ['m1'], 'ts': 3}` — B's committed
+transition is silently gone. Impact is bounded (the remote actions are
+idempotent; the `*/4` cadence with short runs makes overlap unlikely), but the
+original "no locking … last writer wins" remnant holds.
 
 **4.5 — Directory entry not fsynced: the rename is atomic but not crash-durable — LOW.**
 `save_state` fsyncs the tmp file (`routstr_delist.py:234`) but never opens or
 fsyncs the containing directory after `os.replace` (`:235`) — grep for
-`os.open|O_DIRECTORY` in the script = **0 hits** (re-run this session). Probe
-`4h_no_directory_fsync` → `os.open=0 O_DIRECTORY=0 fsync_calls=1
-dir_fsyncs=0` (the single fsync targets a regular file, never a directory). A
+`os.open|O_DIRECTORY` in the script = **0 hits** (AST `os.open` attribute
+count 0, `O_DIRECTORY` 0 this session). Probe `4h_no_directory_fsync` →
+`os_open_attr=0 O_DIRECTORY=0 fsync_calls=1 dir_fsyncs=0 ret=True` (the single
+fsync targets a regular file — `stat.S_ISDIR` false — never a directory). A
 power loss immediately after the swap can therefore lose the directory entry
 even though the data blocks were flushed, leaving the previous state.
 Reader-visible atomicity is intact; only crash-durability of the rename is
@@ -212,11 +224,12 @@ round-trip nor a nak process — every refusal path that reaches `return 3`
 `rc=3 action=blocked api_calls=[] spawns=0` — behaviour is correct for both
 halves of "refuses ALL remote action". The gap is in the guard, not the code:
 `test_blocked_run_refuses_all_remote_action` (`contract:601-612`) asserts only
-on `rig.node.calls` (`FakeSellNode`), and `FakeSellNode` never records the nak
-subprocess, so a future regression that moved the publish above the breaker
-would leave that test green. Residual LOW (test-coverage gap, no live defect).
+on `rig.node.calls` (`FakeSellNode`), and `FakeSellNode` (`contract:92-190`)
+never records the nak subprocess, so a future regression that moved the publish
+above the breaker would leave that test green. Residual LOW (test-coverage gap,
+no live defect).
 
-## Finding 5 — 5-minute SLA arithmetic — **OK**
+## Finding 5 — 5-minute SLA arithmetic — OK
 
 The original finding-5 complaint (`docs/reviews/routstr_delist_review.md:196-234`)
 is resolved: `TRIGGER_ACTION_WINDOW_S` is no longer a dead constant — it is
@@ -233,7 +246,8 @@ the retry is structurally opportunistic — all LOW residuals, detailed below.
 max_attempts=2` (240+60==300, 2*30<=60). The original core complaint (the
 window constant was read only by docstring/doc/tests) is resolved: the budget
 is consumed at `routstr_delist.py:612` (relist) and `:667` (delist) to arm a
-`time.monotonic() + ACTION_BUDGET_S` deadline, and `_SshBackend._run` clamps
+`time.monotonic() + ACTION_BUDGET_S` deadline — probe `5b` reports the two
+arming sites as `deadline_sites=[612, 667]` — and `_SshBackend._run` clamps
 every remote round-trip to `min(SSH_TIMEOUT_S, remaining)` (`:800-806`),
 refusing with `"action budget exhausted"` **without spawning** when
 `remaining <= 0` (`:803-805`). Arithmetic pinned by
@@ -244,7 +258,7 @@ Because the timeout is `min(30, remaining)` with a pre-flight `remaining <= 0`
 refusal, a fired run can spend at most `ACTION_BUDGET_S = 60 s` acting **by
 construction**. Probe `5b_budget_exhausted_no_spawn` (expired deadline, real
 `_SshBackend._run` with a stubbed `subprocess.run`) →
-`expired=action budget exhausted spawns=[4.99999562499579]` — the expired call
+`expired=action budget exhausted spawns=[4.999992451994331]` — the expired call
 spawned nothing (exactly one spawn total, from the live call) and the live call
 was clamped to the ~5 s remaining, not 30. The observable happy path is pinned
 by `test_trigger_sample_to_verified_delist_under_300s` (`contract:553-577`): a
@@ -280,17 +294,16 @@ Residual LOW for this finding (the deployment gap itself is finding 6's remit).
 synchronous disk operation — the deadline at `:667` bounds only
 `_SshBackend._run` round-trips (`:800-806`). Probe `5f_local_fsync_unclamped`
 (run with a real `os.fsync`, no stub, under an 8 s alarm guard) →
-`ret=True real_fsync_calls=1 note=completed err=None` — the real fsync call
-happens and is not bounded by the action budget. The atomicity rigs document
-the pathology that makes this material: "this fleet host's disk can stall
-indefinitely inside fsync" (`contract:252-254`), which is why both the rig
-(`contract:257`) and Case 10 (`contract:629-634`) stub `os.fsync` out. With
-`docs:100-103`'s arithmetic at exactly 300 s and zero margin (5.3), any local
-stall — `fsync`, interpreter startup, `evaluate_triggers` over a large feed —
-is spent from the same budget and is unaccounted for by the clamp. Not
-demonstrable as a breach here (the fsync is stubbed in every test precisely
-because it hangs on this host), so this is a residual observation rather than a
-reproduced defect.
+`ret=True real_fsync_calls=1 err=None` — the real fsync call happens and is not
+bounded by the action budget. The atomicity rigs document the pathology that
+makes this material: "this fleet host's disk can stall indefinitely inside
+fsync" (`contract:252-254`), which is why both the rig (`contract:257`) and
+Case 10 (`contract:629-634`) stub `os.fsync` out. With `docs:100-103`'s
+arithmetic at exactly 300 s and zero margin (5.3), any local stall — `fsync`,
+interpreter startup, `evaluate_triggers` over a large feed — is spent from the
+same budget and is unaccounted for by the clamp. Not demonstrable as a breach
+here (the fsync is stubbed in every test precisely because it hangs on this
+host), so this is a residual observation rather than a reproduced defect.
 
 **5.6 — `--nsec` publish runs after the success path and is not inside the deadline — LOW.**
 The best-effort kind-30078 publish (`routstr_delist.py:754-756`,
