@@ -1,63 +1,122 @@
-# Review Findings 1–3: routstr delist contract
+# Findings 1–3 Review: routstr dynamic delist
 
-Artifact status:
-- `~/.hermes/bot/docs/routstr_delist_contract.md` — **MISSING** (HIGH)
-- `~/.hermes/bot/docs/routstr-delist.md` — present, used as the contract artifact
-- `~/.hermes/bot/scripts/routstr_delist.py` — present
-- `~/.hermes/bot/tests/test_routstr_delist.py` — present
+Artifacts reviewed end-to-end:
+- `~/.hermes/bot/docs/routstr-delist.md`
+- `~/.hermes/bot/scripts/routstr_delist.py`
+- `~/.hermes/bot/tests/test_routstr_delist.py`
 
----
-
-## Finding 1 — safety: remote command shell-injection / quoting
-
-Severity: **OK**
-
-Evidence:
-- `~/.hermes/bot/scripts/routstr_delist.py:414-425` defines `build_ssh_docker_cmd(ssh_target, container, payload)`.
-- It builds the remote command as one string and applies `shlex.quote` to both the container name and the python payload:
-  - `remote = " ".join(["docker", "exec", shlex.quote(container), "python3", "-c", shlex.quote(payload)])`
-  - `return ["ssh", ssh_target, remote]`
-- The local invocation uses `subprocess.run(cmd, ...)` without `shell=True` at `~/.hermes/bot/scripts/routstr_delist.py:808`, so the local shell is not involved.
-- The contract doc at `~/.hermes/bot/docs/routstr-delist.md:132-139` calls out this exact mitigation: "`ssh` joins everything after the host into ONE string parsed by the remote shell, so `build_ssh_docker_cmd()` emits the entire remote pipeline … as a single argv element with `shlex.quote` … The regression test re-parses the remote command with `shlex.split` and asserts it round-trips".
-- Tests at `~/.hermes/bot/tests/test_routstr_delist.py:336-338` assert that the produced pull/verify payloads match the payload builders exactly, and the test suite includes shell-safety/round-trip assertions.
-
-Conclusion: the SSH/docker command is constructed safely for the intended API boundary. No issue.
+Note: `~/.hermes/bot/docs/routstr_delist_contract.md` was **missing**. The actual contract document is `~/.hermes/bot/docs/routstr-delist.md`, which was used instead. This path mismatch is a documentation/HIGH inconsistency for downstream tooling, but the contract itself is readable and complete.
 
 ---
 
-## Finding 2 — confirmation: delist success must be independently verified
+## Finding 1 — Safety: remote-command shell-safety in `build_ssh_docker_cmd`
 
-Severity: **OK**
+**Severity: LOW**
+
+`~/.hermes/bot/scripts/routstr_delist.py:414-425` builds the `ssh` remote command as a single argv element and `shlex.quote`s the container name and the Python payload:
+
+```python
+remote = " ".join(["docker", "exec", shlex.quote(container),
+                   "python3", "-c", shlex.quote(payload)])
+return ["ssh", ssh_target, remote]
+```
+
+The local side runs `subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)` at `~/.hermes/bot/scripts/routstr_delist.py:808` **without** `shell=True`, so no local shell expansion occurs and the only shell parse is remote. Quoting the payload and container is correct and prevents remote shell injection from those values. The regression concept is present in tests via the `FakeSellNode` executing the real payload, although there is no explicit `shlex.split`-roundtrip assertion in `test_routstr_delist.py` against the exact string (the contract doc claims one exists).
+
+The `ssh_target` is passed unquoted to `ssh` as a positional argument (`~/.hermes/bot/scripts/routstr_delist.py:425`). Because `ssh` itself parses the target as `[user@]host[:port]` (or accepts alias/config names), a malicious `--ssh-target` could redirect the connection. The target defaults to a fixed operator value and is only set via an explicit CLI override, so this is a configuration-level residual risk rather than an active command-injection vector in the constructed remote pipeline.
 
 Evidence:
-- The `verify_pull_payload()` function at `~/.hermes/bot/scripts/routstr_delist.py:400-411` returns a read-only payload:
-  - `"n=db.execute('SELECT COUNT(*) FROM models WHERE enabled=1').fetchone()[0];"`
-  - The payload is `SELECT`-only and never mutates.
-- Main calls `backend.verify()` at `~/.hermes/bot/scripts/routstr_delist.py:682` after a successful pull.
-- Success is gated on `vres.get("ok") is True and vres.get("count") == 0` at `~/.hermes/bot/scripts/routstr_delist.py:683`, not on the pull's own `ok` flag.
-- If the re-fetch refutes the pull, the code sets `res["ok"] = False` and `res["confirmed"] = False` at `~/.hermes/bot/scripts/routstr_delist.py:691-694`.
-- Failure semantics document at `~/.hermes/bot/docs/routstr-delist.md:62-75`: "Success is gated on the re-fetch reporting `count == 0` — never on the pull round-trip's self-report. A pull that self-reports ok but cannot be confirmed is a failed attempt."
-- Tests at `~/.hermes/bot/tests/test_routstr_delist.py:346-361` (`test_unverified_pull_is_a_failed_delist`) simulate a lying pull and assert exit 1, `delisted=False`, and a breaker tick.
-- Tests at `~/.hermes/bot/tests/test_routstr_delist.py:319-344` (`test_acceleration_fires_exactly_one_delist_verified_by_refetch`) assert one pull + one verify, `confirmed=True`, `verified_count==0`.
+- `~/.hermes/bot/scripts/routstr_delist.py:414-425` — `build_ssh_docker_cmd` quotes `container` and `payload`.
+- `~/.hermes/bot/scripts/routstr_delist.py:808` — local `subprocess.run` is not shell-invoked.
+- `~/.hermes/bot/docs/routstr-delist.md:134-139` — contract documents the same shell-safety design and says a regression test reparses with `shlex.split`, which is not visibly present in `test_routstr_delist.py`.
 
-Conclusion: confirmation-by-independent-re-fetch is implemented and tested. No issue.
+Verdict: remote shell injection via the payload/container is mitigated correctly. Severity LOW for the unquoted `ssh_target` positional and the missing explicit `shlex.split` regression test.
 
 ---
 
-## Finding 3 — fail-safe: stale / missing / corrupt `--preds` feed must not trigger, must not wipe the acceleration baseline, and must be reported
+## Finding 2 — Confirmation: independent re-fetch verifies a delist
 
-Severity: **OK**
+**Severity: OK**
+
+A fired delist performs a pull followed by an independent read-only verification round-trip. `~/.hermes/bot/scripts/routstr_delist.py:662-697` calls:
+
+```python
+vres = backend.verify(deadline=deadline)
+if vres.get("ok") is True and vres.get("count") == 0:
+    res["confirmed"] = True
+    res["verified_count"] = vres.get("count")
+    confirmed = True
+    break
+```
+
+The verify payload at `~/.hermes/bot/scripts/routstr_delist.py:400-411` is read-only:
+
+```python
+return (
+    "import sqlite3,json;"
+    "db=sqlite3.connect('/app/data/keys.db');"
+    "n=db.execute('SELECT COUNT(*) FROM models WHERE enabled=1')"
+    ".fetchone()[0];"
+    "print(json.dumps({'ok':True,'count':n}))"
+)
+```
+
+If the verify reports a non-zero count or fails, `res["ok"]` is forced to `False`, `confirmed` stays `False`, and one bounded in-run retry is attempted while `time.monotonic() < deadline` (`~/.hermes/bot/scripts/routstr_delist.py:671-697`). Failure path at `~/.hermes/bot/scripts/routstr_delist.py:719-739` exits non-zero, does not set `delisted=true`, does not consume the acceleration baseline, and increments/trips the circuit breaker.
+
+Tests cover this behavior:
+- `~/.hermes/bot/tests/test_routstr_delist.py:318-345` confirms `delist` + verified count of zero.
+- `~/.hermes/bot/tests/test_routstr_delist.py:346-360` confirms a lying pull is refuted by verification and fails with exit 1.
 
 Evidence:
-- `feed_is_stale(pred_input, ...)` at `~/.hermes/bot/scripts/routstr_delist.py:485-496` returns `True` on any OSError or whenever age cannot be proven fresh (fail-closed). It returns `False` only when `0 <= age <= max_age_s`.
-- In `main()` at `~/.hermes/bot/scripts/routstr_delist.py:589-592`, when the feed is stale the predictions are replaced with `[]`:
-  - `preds_stale = bool(args.preds) and bool(raw_preds) and feed_is_stale(args.preds)`
-  - `if preds_stale: raw_preds = []`
-- An explicitly requested feed that yields nothing is flagged as `preds_error = bool(args.preds) and not raw_preds` at `~/.hermes/bot/scripts/routstr_delist.py:585`.
-- `update_state(...)` only writes the snapshot when `preds` is truthy at `~/.hermes/bot/scripts/routstr_delist.py:261-262`; with `preds=[]` the stored acceleration baseline is preserved.
-- The no-fire output at `~/.hermes/bot/scripts/routstr_delist.py:655-660` includes `"preds_error": preds_error, "preds_stale": preds_stale` and exits `1` when either flag is set.
-- Manual override is gated independently at `~/.hermes/bot/scripts/routstr_delist.py:580` and can still fire when the feed is stale (tested at `~/.hermes/bot/tests/test_routstr_delist.py:427-433`).
-- Contract doc at `~/.hermes/bot/docs/routstr-delist.md:56-60` and `~/.hermes/bot/docs/routstr-delist.md:84-86` document both the stale/dead-data guard and the corrupt-feed guard.
-- Tests cover stale feed (`test_manual_override_is_never_gated_on_feed_staleness`) and steady-state baseline preservation.
+- `~/.hermes/bot/scripts/routstr_delist.py:400-411` — read-only verify payload.
+- `~/.hermes/bot/scripts/routstr_delist.py:662-697` — verify gates `confirmed`.
+- `~/.hermes/bot/scripts/routstr_delist.py:719-739` — failure semantics preserve baseline and flag.
+- `~/.hermes/bot/tests/test_routstr_delist.py:318-360` — regression coverage for verified success and refuted pull.
+- `~/.hermes/bot/docs/routstr-delist.md:64-75` — contract confirms the same semantics.
 
-Conclusion: stale/dead/corrupt feed handling is fail-safe and observable. No issue.
+Verdict: independent verification is correctly implemented and tested. Severity OK.
+
+---
+
+## Finding 3 — Fail-safe: stale/corrupt `--preds` feed must not trigger or blind baseline
+
+**Severity: OK**
+
+Feed handling at `~/.hermes/bot/scripts/routstr_delist.py:580-597` is fail-closed:
+
+```python
+override = args.manual or manual_override(args.override)
+raw_preds = _read_preds(args.preds)
+preds_error = bool(args.preds) and not raw_preds
+preds_stale = bool(args.preds) and bool(raw_preds) and \
+    feed_is_stale(args.preds)
+if preds_stale:
+    raw_preds = []
+```
+
+`feed_is_stale` at `~/.hermes/bot/scripts/routstr_delist.py:485-496` treats any age-determination failure as stale:
+
+```python
+try:
+    age = (now if now is not None else time.time()) - \
+        os.path.getmtime(pred_input)
+    return not (0 <= age <= max_age_s)
+except OSError:
+    return True
+```
+
+The stored baseline snapshot is only updated when `preds` is truthy (`~/.hermes/bot/scripts/routstr_delist.py:261-262`), so a missing/corrupt feed (`raw_preds == []`) cannot wipe the previous baseline (`~/.hermes/bot/scripts/routstr_delist.py:255-257`). A stale feed is zeroed before the snapshot update path, so it also does not refresh the baseline. When nothing fires, `preds_error` or `preds_stale` forces exit 1 (`~/.hermes/bot/scripts/routstr_delist.py:660`). Manual override is intentionally not gated by freshness (`~/.hermes/bot/scripts/routstr_delist.py:580` uses `args.manual` and `manual_override(args.override)` before the freshness guard).
+
+Tests cover this:
+- `~/.hermes/bot/tests/test_routstr_delist.py:427-433` confirms `--manual` still delists despite stale feed.
+- `~/.hermes/bot/tests/test_routstr_delist.py:308-315` confirms first run without baseline is quiet.
+
+Evidence:
+- `~/.hermes/bot/scripts/routstr_delist.py:485-496` — `feed_is_stale` returns `True` on any error.
+- `~/.hermes/bot/scripts/routstr_delist.py:580-597` — stale feeds are zeroed; errors are flagged.
+- `~/.hermes/bot/scripts/routstr_delist.py:255-262` — baseline only refreshes on non-empty predictions.
+- `~/.hermes/bot/scripts/routstr_delist.py:660` — non-zero exit when feed error or stale.
+- `~/.hermes/bot/tests/test_routstr_delist.py:427-433` — manual override bypasses stale guard.
+- `~/.hermes/bot/docs/routstr-delist.md:55-60` — contract describes the freshness guard.
+
+Verdict: stale and unreadable feeds are handled fail-closed, preserve baseline, and surface failure. Severity OK.
