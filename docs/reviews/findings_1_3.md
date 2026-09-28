@@ -17,7 +17,7 @@ No artifacts were modified.
 The task explicitly named `~/.hermes/bot/docs/routstr_delist_contract.md` as a review artifact. That file does not exist on disk. The review therefore cannot be anchored to the prescribed contract document. The implementation and tests appear to have been written against `~/.hermes/bot/docs/routstr-delist.md` instead.
 
 Evidence:
-- `read_file ~/.hermes/bot/docs/routstr_delist_contract.md` returned `File not found: /home/c03rad0r/.hermes/bot/docs/routstr_delist_contract.md` with a similar-file hint of `/home/c03rad0r/.hermes/bot/docs/routstr-delist.md`.
+- `read_file ~/.hermes/bot/docs/routstr_delist_contract.md` returned `File not found: /home/c03rad0r/.hermes/bot/docs/routstr_delist_contract.md` (similar file hint: `~/.hermes/bot/docs/routstr-delist.md`).
 
 Until the requested contract file exists or the task references are updated, this finding is blocking.
 
