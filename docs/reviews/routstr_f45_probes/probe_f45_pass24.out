@@ -1,0 +1,30 @@
+[4a_atomic_save_protocol] ret=True fsync_calls=1 fsync_dir_targets=[False] replace_calls=1 same_dir=True litter=[] on_disk={'delisted': True, 'ts': 1}
+[4b_call_sites_discard_return] definition=[221] call_sites=[565, 622, 629, 638, 654, 710, 732, 752] discarded=[565, 622, 629, 638, 654, 710, 732, 752] guarded=[] main_checks_return=False
+[4b_silent_persist_failure_main] rc=0 action='delist' ok=True confirmed=True replace_failures=1 disk_unchanged=True disk_delisted=False
+[4b2_delivered_flag_not_flipped] rc=0 listing_pulled=True disk_delisted=False publisher_sees=False divergence=True
+[4b3_persist_failure_freezes_breaker] rcs=[3, 3, 3, 3] disk_consecutive_failures=2 disk_blocked=False status_reports_blocked=False unblock_possible=False
+[4g2_no_lock_primitives_static] hits=0 found=[]
+[4g_no_lock_last_writer_wins] final_delisted=False final_ts=2 a_transition_lost=True
+[4h_no_directory_fsync] ret=True fsync_targets_dir=[False] O_DIRECTORY_hits=0 os_open_hits=0 dir_entry_fsync=False
+[4c_redelist_merge] rc=0 pulled=[] pulled_models=['m1', 'm2'] clobbered=False
+[4d_relist_refused] rc=1 action='relist_refused' backend_calls=[]
+[4d2_live_state_no_pulled_models] keys=['delisted', 'last_dry_run', 'last_reason', 'snapshot', 'ts'] has_pulled_models=False relist_would_refuse=True
+[4e_failed_relist_no_breaker_tick] rc=1 action='relist_failed' disk_consecutive_failures=2 blocked_key_present=False
+[4f_bool_counter_hole] rc=1 consecutive_failures=2 bool_accepted_as_one=True
+[4i_failed_delist_clears_flag] rc_ok=0 rc_fail=1 flag_after_success=True flag_after_failure=False pulled_models_kept=['gpt-4o', 'claude-3-5-sonnet', 'llama-3.1-405b'] listing_still_pulled_on_node=True advertisement_flapped=True
+[4j_dry_run_persist_failure_silent] rc=0 action='delist' intent_persisted=False disk_unchanged=True
+[5a_constant_arithmetic] window=300 poll=240 budget=60 ssh=30 attempts=2 sum_ok=True pull_plus_verify_fits=True
+[5b_constant_consumers] constant='TRIGGER_ACTION_WINDOW_S' consumers=[67, 73]
+[5b_constant_consumers] constant='POLL_CADENCE_S' consumers=[66, 67, 73]
+[5b_constant_consumers] constant='ACTION_BUDGET_S' consumers=[67, 70, 612, 667]
+[5b_constant_consumers] constant='SSH_TIMEOUT_S' consumers=[773, 800, 806]
+[5b_constant_consumers] constant='MAX_PULL_ATTEMPTS' consumers=[671, 675, 695]
+[5c_trigger_to_verified_delist] rc=0 action='delist' confirmed=True elapsed=290.0 window=300 within=True deadline_log=[{'kind': 'pull', 't': 240.0, 'remaining': 60.0, 'timeout': 30}, {'kind': 'verify', 't': 265.0, 'remaining': 35.0, 'timeout': 30}]
+[5d_action_budget_clamp] rc=1 action='delist_failed' confirmed=None action_elapsed=60.0 budget=60 within_budget=True timeouts=[30, 30]
+[5d2_lying_pull_retry_clamp] rc=1 action='delist_failed' confirmed=None kinds=['pull', 'verify', 'pull'] action_elapsed=60.0 budget=60 within_budget=True timeouts=[30, 30, 10.0]
+[5d3_nak_publish_timeout] lines=[459] deadline_clamped=False note='nak publish runs AFTER a confirmed delist and is not budget-clamped'
+[5e_failed_run_bounded_retry] rc=1 action='delist_failed' pull_attempts=2 max_attempts=2 run_elapsed=0.0 detection_plus_run=240.0
+[5f_cron_cadence_wired] cron_entries=0 entries=[]
+[5g_poll_cadence_consumers] script_consumers=[66, 67, 73] test_uses=5
+
+28 probes completed
