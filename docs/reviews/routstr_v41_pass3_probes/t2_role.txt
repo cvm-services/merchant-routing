@@ -1,0 +1,19 @@
+===== T2 role (in-repo pytest) =====
+.................F.........                                              [100%]
+=================================== FAILURES ===================================
+________________ test_funding_guard_paths_are_the_restored_ones ________________
+
+    def test_funding_guard_paths_are_the_restored_ones():
+>       assert DEFAULTS["routstrd_funding_guard_script"] == (
+            "/home/c03rad0r/merchant-routing-engine/scripts/routstrd_funding_guard.py"
+        )
+E       AssertionError: assert '{{ ansible_u...ding_guard.py' == '/home/c03rad...ding_guard.py'
+E         
+E         - /home/c03rad0r/merchant-routing-engine/scripts/routstrd_funding_guard.py
+E         + {{ ansible_user_dir | default('/home/' + ansible_user_id) }}/merchant-routing-engine/scripts/routstrd_funding_guard.py
+
+tests/test_routstrd_lane_role.py:239: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_routstrd_lane_role.py::test_funding_guard_paths_are_the_restored_ones
+1 failed, 26 passed in 0.55s
+rc=1

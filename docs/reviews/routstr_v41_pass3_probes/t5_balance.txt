@@ -1,0 +1,21 @@
+===== T5 balance-cron tests (engine @8b91148) =====
+.F.                                                                      [100%]
+=================================== FAILURES ===================================
+______________ test_missing_wallet_fails_loudly_and_writes_no_row ______________
+
+tmp_path = PosixPath('/tmp/pytest-of-c03rad0r/pytest-335/test_missing_wallet_fails_loud0')
+
+    def test_missing_wallet_fails_loudly_and_writes_no_row(tmp_path):
+        p, rows = _run(tmp_path, tmp_path / "nope" / "coco.db")
+        assert p.returncode != 0
+        assert rows == []
+>       assert "read FAILED" in (p.stdout + p.stderr)
+E       AssertionError: assert 'read FAILED' in ('⚠️ routstrd balance payload unusable (Expecting value: line 1 column 1 (char 0)): routstrd wallet not present on this host\n⚠️ routstrd balance store failed\n' + '')
+E        +  where '⚠️ routstrd balance payload unusable (Expecting value: line 1 column 1 (char 0)): routstrd wallet not present on this host\n⚠️ routstrd balance store failed\n' = CompletedProcess(args=['bash', '/mnt/cw-offload/rv41-wt-mre/scripts/routstrd_balance_cron.sh'], returncode=1, stdout='...e: line 1 column 1 (char 0)): routstrd wallet not present on this host\n⚠️ routstrd balance store failed\n', stderr='').stdout
+E        +  and   '' = CompletedProcess(args=['bash', '/mnt/cw-offload/rv41-wt-mre/scripts/routstrd_balance_cron.sh'], returncode=1, stdout='...e: line 1 column 1 (char 0)): routstrd wallet not present on this host\n⚠️ routstrd balance store failed\n', stderr='').stderr
+
+tests/test_routstrd_balance_cron.py:102: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_routstrd_balance_cron.py::test_missing_wallet_fails_loudly_and_writes_no_row
+1 failed, 2 passed in 0.42s
+rc=1

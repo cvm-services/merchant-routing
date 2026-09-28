@@ -1,0 +1,52 @@
+### captured 2026-09-27T10:11:45+02:00 on c03rad0r-DQ05proplus
+
+=== A. hermes-orchestration lineage ===
+bb587eb3
+bb587eb3 Merge pull request #172 from felixfelix-bot/pr/reports-cred-watchdog-src
+34aa21ac subject=feat(router): wire deepseek-v4.1-flash into the routstr/routstrd lanes
+   ancestor-of-origin/master: NO/unknown
+a81041ee subject=feat(routstrd): manage the buy lane as a service + restore the funding-guard cron
+   ancestor-of-origin/master: NO/unknown
+67e0f1b7 subject=feat(router): wire deepseek-v4.1-flash into the routstr/routstrd lanes
+   ancestor-of-origin/master: YES
+c7be49ad subject=feat(routstrd): manage the buy lane as a service + restore the funding-guard cron
+   ancestor-of-origin/master: YES
+37d6b55f subject=feat(phase-q): MAAS laptop provisioning + target-user cleanup
+   ancestor-of-origin/master: YES
+-- github refs at the PR tips --
+-- github/master --
+
+=== B. blob identity (repo vs deployed) ===
+34aa21ac       flat_router=449ddbc18fed9093432b77dda8d14c9ebff3af3f zai_proxy=57e11a800e16134cc62fad2528277df112ee6a8e
+a81041ee       flat_router=449ddbc18fed9093432b77dda8d14c9ebff3af3f zai_proxy=57e11a800e16134cc62fad2528277df112ee6a8e
+origin/master  flat_router=449ddbc18fed9093432b77dda8d14c9ebff3af3f zai_proxy=4c4afa17de4e84a22ce695e61350abce870b4831
+deployed cobrador (md5): 1dc1091bd4d264edbfe2c0e9cae89454 / c2f13451b527acdba70861224a966287
+deployed dq05     (md5): 4a74a2b49c2128023e822e873c4705d8 / 376f201f576b123c091ff15e8f577713
+origin/master     (md5): 1dc1091bd4d264edbfe2c0e9cae89454 / c2f13451b527acdba70861224a966287
+
+=== C. role 51 / master delta vs the reviewed head ===
+ roles/51-routstrd-lane/defaults/main.yml | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+-- the 4-line defaults delta --
+diff --git a/roles/51-routstrd-lane/defaults/main.yml b/roles/51-routstrd-lane/defaults/main.yml
+index 9c979df5..ebffc3c0 100644
+--- a/roles/51-routstrd-lane/defaults/main.yml
++++ b/roles/51-routstrd-lane/defaults/main.yml
+@@ -98,8 +98,8 @@ routstrd_lane_reclaim_stray: false
+ # only REFERENCES it — never copies, forks or duplicates it.
+ routstrd_funding_guard_enabled: true
+ routstrd_funding_guard_name: routstrd-funding-guard
+-routstrd_funding_guard_script: /home/c03rad0r/merchant-routing-engine/scripts/routstrd_funding_guard.py
+-routstrd_funding_guard_log: /home/c03rad0r/merchant-routing-engine/logs/routstrd_funding_guard.log
++routstrd_funding_guard_script: "{{ ansible_user_dir | default('/home/' + ansible_user_id) }}/merchant-routing-engine/scripts/routstrd_funding_guard.py"
++routstrd_funding_guard_log: "{{ ansible_user_dir | default('/home/' + ansible_user_id) }}/merchant-routing-engine/logs/routstrd_funding_guard.log"
+ routstrd_funding_guard_schedule: "*/5 * * * *"
+ 
+ # RETIRED, deliberately NOT restored (see README.md §"What stays retired"):
+
+=== D. merchant-routing-engine lineage ===
+8b91148 fix(routstrd): read the migrated ~/.routstrd wallet, not the dead ~/.cocod path
+8b91148 fix(routstrd): read the migrated ~/.routstrd wallet, not the dead ~/.cocod path
+8b91148 ancestor of main: YES
+guard blobs: 8b91148=326c302c80eb1d0864edf777ad503ba91d225fee worktree-md5=fec2e50a6840517f3f19f4e4a5a4d55f
+            HEADfile-md5=fec2e50a6840517f3f19f4e4a5a4d55f

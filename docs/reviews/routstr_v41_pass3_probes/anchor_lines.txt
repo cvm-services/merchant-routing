@@ -1,0 +1,59 @@
+=== flat_router.py (md5 1dc1091b == origin/master:scripts/engine/flat_router.py) ===
+311:    "routstr": {
+321:    "routstrd": {
+342:_SEED_RATES: dict[str, float] = {
+355:    "routstr":       1.00,    # estimated from routstr_probe
+356:    "routstrd":      1.00,    # estimated
+378:# ── PROVIDER_TIER: 5-tier classification (time-aware pricing design §2) ──────
+384:PROVIDER_TIER: dict[str, str] = {
+402:    "routstr":        "per_token",
+403:    "routstrd":       "per_token",
+448:        for name, rate in _SEED_RATES.items():
+850:    tier = PROVIDER_TIER.get(provider, "per_token")  # default to per-token
+1100:                tier = PROVIDER_TIER.get(name, "per_token")
+1125:        base_rate = _SEED_RATES.get(name, 999.0)
+1132:    return _SEED_RATES.get(name, 999.0)
+1361:def _make_dispatch_fn(name: str) -> Callable | None:
+1508:def select_provider(
+
+=== zai_proxy.py (md5 c2f13451 == origin/master:scripts/engine/zai_proxy.py) ===
+765:                elif line.startswith("ROUTSTR_API_KEY=") and "routstr" not in keys:
+766:                    keys["routstr"] = line.split("=",1)[1].split("#")[0].strip().strip("'").strip('"')
+769:                elif line.startswith("ROUTSTRD_API_KEY=") and "routstrd" not in keys:
+770:                    keys["routstrd"] = line.split("=",1)[1].split("#")[0].strip().strip("'").strip('"')
+883:_PROVIDER_MODEL_NAMES = {
+907:        "deepseek/deepseek-flash":    "deepseek/deepseek-v4.1-flash",
+947:        "deepseek/deepseek-flash":     "deepseek-v4.1-flash",
+955:    # NETWORK id `deepseek-v4.1-flash` (DOTTED "v4.1", not a dash) — verified
+957:    # 2026-09-26 (21 ids; also `tinfoil-deepseek-v4-1-flash`).
+969:    "routstr": {
+970:        "deepseek/deepseek-flash":     "deepseek-v4.1-flash",
+972:    "routstrd": {
+973:        "deepseek/deepseek-flash":     "deepseek-v4.1-flash",
+977:    # deepseek-v4.1-flash, so the canonical deepseek/deepseek-flash maps to it.
+982:        "deepseek/deepseek-flash":     "deepseek-v4.1-flash",
+986:        "deepseek/deepseek-flash":     "deepseek-v4.1-flash",
+990:        "deepseek/deepseek-flash":     "deepseek-v4.1-flash",
+995:        "deepseek/deepseek-flash":     "deepseek-v4.1-flash",
+1003:    "deepseek-v4.1-flash":   {"input": 0.14, "cached_input": 0.03, "output": 0.28},
+1035:    "routstr": {
+1039:        "key": _EXTERNAL_KEYS.get("routstr", ""),
+1041:    "routstrd": {
+1045:        "key": _EXTERNAL_KEYS.get("routstrd", ""),
+1079:      1. It appears in _PROVIDER_MODEL_NAMES for any provider, OR
+1099:    # Check _PROVIDER_MODEL_NAMES (per-provider model mapping)
+1100:    for _prov_map in _PROVIDER_MODEL_NAMES.values():
+2194:    if name in ("routstr", "routstrd"):
+2198:    if name == "routstr":
+2202:    elif name == "routstrd":
+2529:        snap["routstr"] = _routstr_quota_snapshot()  # VPS2 node sats balance
+2530:        snap["routstrd"] = _routstrd_balance_snapshot()  # local daemon, 420s cache
+2606:        h["routstr"] = _is_key_healthy("routstr")
+2608:        h["routstrd"] = _is_key_healthy("routstrd")
+2793:        "routstr", _shadow_pk(1.00), _ShadowConsumptionKalman(),
+2799:        "routstrd", _shadow_pk(1.00), _ShadowConsumptionKalman(),
+3731:    "neuralwatt", "routstr", "routstrd", "deepinfra",
+4034:    for prov_name in ("routstrd", "routstr"):
+4036:            rates = (_get_routstrd_rates() if prov_name == "routstrd"
+4096:    key = _EXTERNAL_KEYS.get("routstrd", "")
+4197:    elif key_name in ("telnyx", "ppq", "openrouter", "routstr", "routstrd",

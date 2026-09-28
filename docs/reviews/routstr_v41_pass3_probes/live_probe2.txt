@@ -1,0 +1,54 @@
+### host=CobradorWave date=2026-09-27T09:54:07+02:00
+### ~/.bun:
+lrwxrwxrwx 1 c03rad0r c03rad0r 30 Sep 23 00:01 /home/c03rad0r/.bun -> /mnt/dq05-lexar/cw-offload/bun
+### mount targets:
+ls: cannot access '/mnt/cw-offload': No such file or directory
+drwxr-xr-x 18 root     root     4096 Sep 22 23:53 /mnt
+drwxr-xr-x  2 c03rad0r c03rad0r 4096 Sep 22 23:53 /mnt/dq05-lexar
+### mount units mentioning dq05-lexar:
+  mnt-dq05\x2dlexar.mount                                                                               loaded    inactive dead    /mnt/dq05-lexar
+### systemd user automount/units:
+  mount-health.service                                                                                                                                     loaded    inactive   dead            Alert when the DQ05 offload sshfs mount is stalled or unmounted
+### routstrd.service limits:
+ConditionResult=yes
+StartLimitIntervalUSec=5min
+StartLimitBurst=5
+StartLimitAction=none
+InvocationID=fe519fcca4454a88aa3cb682c67dc480
+RestartUSec=5s
+ExecMainStartTimestamp=Sat 2026-09-26 23:25:43 CEST
+### any routstr/routstrd process:
+(none)
+### port holders:
+(none)
+### ~/routstrd (CLI js the guard tries):
+ls: cannot access '/home/c03rad0r/routstrd/dist/index.js': No such file or directory
+ls: cannot access '/home/c03rad0r/.bun/bin/bun': No such file or directory
+ls: cannot access '/home/c03rad0r/.bun/bin/routstrd': No such file or directory
+lrwxrwxrwx 1 c03rad0r c03rad0r 35 Sep 23 23:40 /home/c03rad0r/routstrd -> /mnt/dq05-lexar/cw-offload/routstrd
+### merchant-routing-engine symlink:
+lrwxrwxrwx 1 c03rad0r c03rad0r 50 Sep 23 23:40 /home/c03rad0r/merchant-routing-engine -> /mnt/dq05-lexar/cw-offload/merchant-routing-engine
+/mnt/dq05-lexar/cw-offload/merchant-routing-engine
+target MISSING (dangling)
+### guard log:
+ls: cannot access '/home/c03rad0r/merchant-routing-engine/logs/routstrd_funding_guard.log': No such file or directory
+### bot files (routstrd/state/invoice):
+-rw-rw-r--  1 c03rad0r c03rad0r          0 Sep 15 10:50 .key_disabled_routstrd
+-rw-rw-r--  1 c03rad0r c03rad0r        112 Aug 22 12:30 .routstrd_funding_guard_state.json
+-rw-rw-r--  1 c03rad0r c03rad0r        629 Aug 22 12:25 routstrd_topup_invoice.txt
+### guard state file:
+-rw-rw-r-- 1 c03rad0r c03rad0r 112 Aug 22 12:30 /home/c03rad0r/.hermes/bot/.routstrd_funding_guard_state.json
+{
+ "mint": "https://mint.minibits.cash/Bitcoin",
+ "ts": 1787387703.4957113,
+ "alerted": false,
+ "spoken": true
+}### guard absent-wallet gate (HOME=empty temp):
+routstrd wallet not present on this host
+  rc=0
+  silent-mode rc=0
+### guard dir-present/DB-missing (HOME=temp with ~/.routstrd, no coco.db):
+⚠️ funding guard: routstrd wallet read FAILED — daemon: routstrd daemon CLI not found (no `routstrd` on PATH and no bun + /tmp/tmp.fZ7Sl51etu/routstrd/dist/index.js) | db: wallet db missing: /tmp/tmp.fZ7Sl51etu/.routstrd/wallet/coco.db
+  rc=2
+### guard script copy md5 vs repo@8b91148:
+fec2e50a6840517f3f19f4e4a5a4d55f  /tmp/rv41_guard.py

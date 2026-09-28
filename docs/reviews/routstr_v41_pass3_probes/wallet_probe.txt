@@ -1,0 +1,11 @@
+### host=CobradorWave date=2026-09-27T09:53:50+02:00
+### wallet: /home/c03rad0r/.routstrd/wallet/coco.db exists= True size= 630784
+###   -wal exists=True size=168952
+###   -shm exists=True size=32768
+### legacy: /home/c03rad0r/.cocod/coco.db exists= True size= 0
+### IMMUTABLE reader: proofs=96 per-mint={'https://mint.minibits.cash/Bitcoin': 35508, 'https://mint.orangesync.tech': 5000}
+### MODE=RO reader: per-mint={'https://mint.minibits.cash/Bitcoin': 35514, 'https://mint.orangesync.tech': 5000}
+### COPY+CHECKPOINT reader: proofs=98 per-mint={'https://mint.minibits.cash/Bitcoin': 35514, 'https://mint.orangesync.tech': 5000}
+### guard --balance-json rc=0 stdout={"balances": {"https://mint.minibits.cash/Bitcoin": 35514, "https://mint.orangesync.tech": 5000}, "network_sats": 35514, "source": "db", "wallet_db": "/home/c03rad0r/.routstrd/wallet/coco.db", "testnut_mint": "https://mint.orangesync.tech"} stderr=
+### guard missing-wallet-db rc=2 stdout=⚠️ funding guard: routstrd wallet read FAILED — daemon: routstrd daemon CLI not found (no `routstrd` on PATH and no bun + /home/c03rad0r/routstrd/dist/index.js) | db: wallet db missing: /tmp/rv41-absent/nope/coco.db
+### guard empty-wallet-db rc=2 stdout=⚠️ funding guard: routstrd wallet read FAILED — daemon: routstrd daemon CLI not found (no `routstrd` on PATH and no bun + /home/c03rad0r/routstrd/dist/index.js) | db: wallet db has no coco_cashu_proofs table (0 tables) — empty/legacy wallet at /tmp/rv41-empty-coco.db?

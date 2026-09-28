@@ -1,0 +1,27 @@
+---
+# Does the 51-routstrd-lane funding-guard path expression template under the
+# playbook's REAL conditions (gather_facts: false, as playbook-live-router.yml
+# does)?  facts (ansible_user_dir / ansible_user_id) are NOT gathered then.
+- name: gather_facts=false templating probe
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  vars:
+    probe_script: "{{ ansible_user_dir | default('/home/' + ansible_user_id) }}/merchant-routing-engine/scripts/routstrd_funding_guard.py"
+  tasks:
+    - name: show the resolved funding-guard path (defaults/main.yml form)
+      ansible.builtin.debug:
+        msg: "resolved={{ probe_script }}"
+      ignore_errors: true
+
+- name: gather_facts=true (for contrast)
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+  vars:
+    probe_script: "{{ ansible_user_dir | default('/home/' + ansible_user_id) }}/merchant-routing-engine/scripts/routstrd_funding_guard.py"
+  tasks:
+    - name: show the resolved funding-guard path (defaults/main.yml form)
+      ansible.builtin.debug:
+        msg: "resolved={{ probe_script }}"
+      ignore_errors: true

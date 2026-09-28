@@ -1,0 +1,24 @@
+---
+# Characterise which HOME/user resolution shapes work under gather_facts: false.
+- name: "shape probe with gather_facts false, connection local"
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  vars:
+    a_env_home: "{{ ansible_env.HOME | default('/home/' + ansible_user_id) }}/x"
+    a_user_dir: "{{ ansible_user_dir | default('/home/' + ansible_user_id) }}/x"
+    a_user_id_only: "{{ ansible_user_id | default(lookup('env', 'USER')) }}/x"
+    a_env_home_plain: "{{ ansible_env.HOME }}/x"
+  tasks:
+    - name: "roles 54/52/51-kanban-git shape: ansible_env.HOME | default"
+      ansible.builtin.debug: { msg: "env_home+default = {{ a_env_home }}" }
+      ignore_errors: true
+    - name: "role 51-routstrd-lane shape at master: ansible_user_dir | default"
+      ansible.builtin.debug: { msg: "user_dir+default = {{ a_user_dir }}" }
+      ignore_errors: true
+    - name: "role 51 linger-task shape: ansible_user_id | default(lookup USER)"
+      ansible.builtin.debug: { msg: "user_id+lookup = {{ a_user_id_only }}" }
+      ignore_errors: true
+    - name: "bare ansible_env.HOME"
+      ansible.builtin.debug: { msg: "env_home_plain = {{ a_env_home_plain }}" }
+      ignore_errors: true
