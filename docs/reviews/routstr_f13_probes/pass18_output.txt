@@ -1,0 +1,102 @@
+[PASS] A1 pull_listing_sql UPDATE models enabled=0 L355<-'UPDATE models SET enabled=0 WHERE enabled=1'
+[PASS] A2 relist_sql blanket UPDATE models enabled=1 L361<-'UPDATE models SET enabled=1;'
+[PASS] A3 scoped relist parameterized UPDATE L394<-'UPDATE models SET enabled=1 WHERE name IN'
+[PASS] A4 verify payload SELECT COUNT read-only L408<-'SELECT COUNT(*) FROM models WHERE enabled=1'
+[PASS] A5 upstream_providers docstring L35 L35<-'upstream_providers'
+[PASS] A6 upstream_providers docstring L352 L352<-'upstream_providers'
+[PASS] A7 upstream_providers docstring L771 L771<-'upstream_providers'
+[PASS] A8 shlex.quote(container) L423<-'shlex.quote(container)'
+[PASS] A9 shlex.quote(payload) L424<-'shlex.quote(payload)'
+[PASS] A10 ssh argv element L425<-'["ssh", ssh_target, remote]'
+[PASS] A11 STALENESS_S=1800 L78<-'STALENESS_S = 1800'
+[PASS] A12 feed_is_stale fail-closed OSError L495<-'except OSError:'
+[PASS] A13 feed_is_stale inclusive bound L494<-'return not (0 <= age <= max_age_s)'
+[PASS] A14 preds_error computed L585<-'preds_error = bool(args.preds)'
+[PASS] A15 preds_stale wiring L589<-'preds_stale = bool(args.preds)'
+[PASS] A16 stale zeroes preds L591<-'if preds_stale:'
+[PASS] A17 preds-key filter L597<-'p.get("key") == args.preds_key'
+[PASS] A18 evaluate_triggers no key to variance L303<-'var = variance_jumped(preds_now, threshold=variance_threshold)'
+[PASS] A19 override before freshness L580<-'override = args.manual'
+[PASS] A20 quiet branch exit 1 if err/stale L660<-'return 1 if (preds_error or preds_stale) else 0'
+[PASS] A21 verify call inside loop L682<-'vres = backend.verify'
+[PASS] A22 confirm gate count==0 L683<-'vres.get("ok") is True and vres.get("count") == 0'
+[PASS] A23 refute lying pull L692<-'res["ok"] = False'
+[PASS] A24 failure branch no delisted L726<-'state["delisted"] = False'
+[PASS] A25 relist self-report gate (no verify) L626<-'if not res.get("ok"):'
+[PASS] A26 relist pops pulled_models L635<-'state.pop("pulled_models", None)'
+[PASS] A27 MAX_PULL_ATTEMPTS=2 L75<-'MAX_PULL_ATTEMPTS = 2'
+[PASS] A28 blanket relist refused L606<-'"action": "relist_refused"'
+[PASS] A29 uncertainty type guard L152<-'not isinstance(unc, (int, float)) or isinstance(unc, bool)'
+[PASS] A30 update_state baseline only if preds L261<-'if preds:'
+[PASS] A31 quiet path has no dry-run guard L651<-'if not fire:'
+[PASS] A32 quiet path refreshes snapshot L652<-'state = update_state(state, ts=time.time(), preds=preds'
+[PASS] A33 main suite: verify gates success L567<-'def test_verify_gates_success'
+[PASS] A34 main suite: verify failure=attempt failure L603<-'def test_verify_failure_is_attempt_failure'
+[PASS] A35 main suite: relist refuses blanket L1039<-'def test_relist_refuses_blanket_without_opt_in'
+[PASS] A36 main suite: manual override vs staleness L980<-'def test_stale_feed_exit_zero_when_override_fires'
+[PASS] A37 main suite: stale baseline not consumed L995<-'def test_stale_feed_baseline_not_consumed'
+[PASS] A38 main suite: ssh shlex-safe single cmd L345<-'def test_ssh_cmd_is_single_shlex_safe_remote_command'
+[PASS] A39 main suite: non-numeric uncertainty L146<-'def test_non_numeric_uncertainty_ignored_not_crash'
+[PASS] A40 main suite: update_state preserves baseline L243<-'def test_update_state_empty_preds_preserves_baseline'
+[PASS] A41 contract: ladder guard class L468<-'class TestSemanticGuardLadderUntouched'
+[PASS] A42 contract: ladder byte-identical assert L480<-'assert rig.node.ladder_bytes() == ladder_before'
+[PASS] A43 contract: no payload names upstream_providers L483<-'assert "upstream_providers" not in payload'
+[PASS] A44 contract: lying pull refuted case L346<-'def test_unverified_pull_is_a_failed_delist'
+[PASS] A45 contract: manual override not gated on staleness L427<-'def test_manual_override_is_never_gated_on_feed_staleness'
+[PASS] A46 contract: ladder artifact built L108<-'ladder_artifact'
+[PASS] A47 contract: fake node DECLARES models vs providers L129<-'CREATE TABLE upstream_providers'
+[PASS] B1 payload[pull] does not name upstream_providers import sqlite3,json;db=sqlite3.connect('
+[PASS] B2 payload[pull] targets models table
+[PASS] B1 payload[verify] does not name upstream_providers import sqlite3,json;db=sqlite3.connect('
+[PASS] B2 payload[verify] targets models table
+[PASS] B1 payload[relist_scoped] does not name upstream_providers import sqlite3,json;db=sqlite3.connect('
+[PASS] B2 payload[relist_scoped] targets models table
+[PASS] B1 payload[relist_blanket] does not name upstream_providers import sqlite3,json;db=sqlite3.connect('
+[PASS] B2 payload[relist_blanket] targets models table
+[PASS] B3 no INSERT/DELETE/DROP in any payload
+[PASS] B4 pull SQL models-only enabled=0
+[PASS] B5 blanket relist SQL is models-only
+[PASS] B6 remote argv is 3 elements (single remote cmd) 3
+[PASS] B7 remote cmd round-trips via shlex.split
+[PASS] B8 no shell=True anywhere (source grep)
+[PASS] B9 exactly 2 subprocess.run sites
+[PASS] C1 lying pull refuted -> rc1 1
+[PASS] C1 kinds == pull,verify,pull,verify ['pull', 'verify', 'pull', 'verify']
+[PASS] C1 delisted stays false
+[PASS] C1 consecutive_failures == 1
+[PASS] C2 confirmed -> rc0 0
+[PASS] C2 kinds == pull,verify ['pull', 'verify']
+[PASS] C2 delisted true
+[PASS] C2 pulled_models captured
+[PASS] C2 verify payload read-only
+[PASS] C3 relist kinds == [relist] only ['relist']
+[PASS] C3 relist rc0 0
+[PASS] C3 relist flips delisted false on self-report
+[PASS] C3 relist destroys scoped names (asymmetry)
+[PASS] D1 fresh feed not stale
+[PASS] D2 exact boundary inclusive (fresh)
+[PASS] D3 aged feed stale
+[PASS] D4 future mtime stale
+[PASS] D5 missing path stale
+[PASS] D6 uncertainty string guard
+[PASS] D7 uncertainty bool guard
+[PASS] D8 uncertainty numeric fires
+[PASS] D9 _hours accepts bool (cosmetic LOW)
+[PASS] D10 no baseline -> acceleration never fires
+[PASS] D11 preds-key scoping filters foreign key
+[PASS] D12 garbage feed rc1 1
+[PASS] D12 preds_error true
+[PASS] D12 baseline preserved
+[PASS] D12 no remote action []
+[PASS] D13 stale -> rc1 1
+[PASS] D13 action none
+[PASS] D13 preds_stale true
+[PASS] D13 no remote action []
+[PASS] D14 stale + --manual delists rc0 0
+[PASS] D14 action delist
+[PASS] D15 dry-run quiet path rc0 0
+[PASS] D15 dry-run quiet path refreshes baseline (11.0) {'zai\x1f1h': 11.0}
+[PASS] D15 dry-run quiet path records NO last_dry_run
+
+TALLY 99/99 PASS
+transcript sha256 87f2fd8812044c8ed9ed9d9a22bc684539fd55a8e38227a47034a816579029f8
