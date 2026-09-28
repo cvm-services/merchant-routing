@@ -1,561 +1,76 @@
-# Offload review — routstr delist, findings 1–3 (safety, confirmation, fail-safe)
+# Findings 1–3 — routstr dynamic delist: safety, confirmation, fail-safe
 
-<!-- citation-count: total=175 script=133 contract=12 tests=14 docs=16 -->
+**Verdicts: Finding 1 OK (one MEDIUM gap, rest LOW) · Finding 2 OK (requirement MET; one MEDIUM residual) · Finding 3 OK (LOW residuals only).**
 
-Fifteenth offload pass for findings 1–3, re-derived from primary sources in this
-session against the CURRENT artifacts. Scope, per the original task: **item 1**
-safety (delisting the SALE must never disable the routstr provider or touch the
-T470 flat-router ladder), **item 2** post-delisting confirmation via re-fetch,
-**item 3** fail-safe behaviour on absent, garbage and stale monitor signals.
+**Citation legend.** `routstr_delist.py:N` = `src/routstr_delist.py` — the deployed copy `~/.hermes/bot/scripts/routstr_delist.py` is byte-identical (md5 `2ea724ef08d857cd7b88a957300e70b4`, 829 lines), so one citation covers both. `contract:N` = `tests/test_routstr_delist_contract.py` (752 lines; byte-identical to `~/.hermes/bot/tests/test_routstr_delist.py`, md5 `031851b356f0de4089512f02f13f05cc`). `tests:N` = `tests/test_routstr_delist.py` (1172 lines, the 96-case main suite). `docs:N` = `docs/routstr-delist.md` (197 lines; byte-identical to the bot copy, md5 `e385af98b9c142eec736672d4dcca290`). <!-- citation-count: total=66 script=41 contract=10 tests=3 docs=12 -->
 
-The deliverable already existed at this path from fourteen earlier passes, so the
-dispatch was handled as a **re-derivation**: the document below was rewritten in
-place from evidence collected in this session, not appended to, and nothing in it
-is carried over unverified. All three deployed artifacts were confirmed
-byte-identical to their repo copies before any analysis (md5, probe A0a/A0b/A0c —
-`2ea724ef08d857cd7b88a957300e70b4`, `031851b356f0de4089512f02f13f05cc`,
-`e385af98b9c142eec736672d4dcca290`), so the verdicts are re-derived against the
-same bytes the earlier passes saw. **They came out unchanged: 1 OK, 2 OK, 3 OK.**
-What this pass did change is the review record: three record defects are corrected
-(two of them substantive — a state-shape claim about the quiet path that the
-fourteenth pass asserted and that measurement refutes, and an unqualified
-"dry-run is intent-only" guarantee that holds only on the firing path), and **two
-new observations** are measured, one of which carries a MEDIUM severity because
-its failure direction is loss-of-protection rather than safe.
+**Artifact-path report — HIGH (sixth consecutive pass).** The path this card names, `~/.hermes/bot/docs/routstr_delist_contract.md`, does not exist. The contract role is filled by the stand-in `docs/routstr-delist.md` (197 lines, byte-identical in both trees) plus the executable contract suite `contract:1-752`. This is an artifact-provisioning defect, not a defect in the script or its tests, so it is reported here rather than promoted into one of the three findings. Requirement coverage was not affected: the script itself cites the stand-in at `routstr_delist.py:8-11`, and every claim below was measured against the script, the two suites and that doc.
 
-Method this pass: the script was read end-to-end in both copies, the contract
-suite read end-to-end, the doc read end-to-end, every cited line re-checked
-against its file, all SQL/subprocess/write-path inventories re-run on the parsed
-source (AST, not grep prose), both suites executed, and a **fresh** hermetic probe
-harness — `docs/reviews/routstr_f13_probes/probe_f13_pass15.py`, written for this
-pass, not reused from any earlier one — executed **74 checks: 74/74 PASS**. The
-same harness was first run against the previous (fourteenth-pass) copy of this
-document, which also scored **74/74 PASS**: unlike the thirteenth→fourteenth
-handoff, that pre-rewrite run caught no *mis-filed citation* (its D1 pair audit
-and D2 resolution checks were both clean), so the corrections below come from
-re-measuring the inventory and from reading the quiet-path code against the claim
-made about it. **No transcript file was archived for this pass** (the earlier
-passes' `pass12/13/14_output*.txt` remain in the probe directory); the harness is
-committed, prints its measurements, and reproduces the full transcript
-byte-for-byte on re-run. It replaces only the ssh boundary: it EXECUTES the
-module's own payloads against a stand-in node holding a live `models` (SALE
-listing) table, a live `upstream_providers` (provider ladder) table and a
-ladder-artifact file on disk. No network, no subprocess, no file-backed sqlite.
+**Duplicate-dispatch disclosure.** This is the sixteenth independent offload pass for findings 1–3. The deliverable already existed at both paths — previous revision md5 `cb25ab09b1d9f6f5b4fbdad33f660326`, created before commit sequence and touched by fifteen prior commits on `docs/reviews/findings_1_3.md`. It was **rewritten in place, not appended**: this card's acceptance criterion is *exactly three* finding sections, so an appended `§N` re-verification block would make the artifact non-conforming (the append rule for the other card families does not apply to this path). The three findings below were re-derived from the primary artifacts this pass; no earlier pass's residual was copied forward without re-running the check that produces it. **Disclosed cost:** the fifteenth-pass revision is replaced by this text — recover it with `git show b29abf1b221f9d60a6564413a240b5420a4d5c42:docs/reviews/findings_1_3.md`. No reviewed artifact was modified: the three md5s above are unchanged from the previous pass. Ordinal conventions: `grep -c 'fleet offload'` over this file returns 0, so the offload-note convention is inapplicable and the operative integer is this preamble's "Nth independent offload pass"; the fifteen prior commits touching the path and that ordinal agree here.
 
-**Artifact-path status (required report per task instructions):**
+**Evidence base.** Fresh hermetic harness `docs/reviews/routstr_f13_probes/probe_f13_pass16.py` — 88 checks, executed twice against each revision of this document with a byte-identical transcript (`88 checks: 88 PASS, 0 FAIL`; transcript sha256 `f7211d49…` against the fifteenth-pass text). It replaces only the ssh boundary: the module's own payload builders are executed against an in-process stand-in sell node holding a live `models` table, a live `upstream_providers` table and a ladder artifact file, so "the ladder is untouched" is measured by execution rather than asserted from prose. Suites re-run this pass with `TMPDIR` off the host's full 5.5 GB `/tmp` tmpfs: `121 passed` (contract 25 + main 96) and `25 passed` for the deployed copy.
 
-- `~/.hermes/bot/docs/routstr_delist_contract.md` — **MISSING — HIGH**.
-  Re-verified this pass: probe A0d asserts the path is absent (`exists=False`).
-  The contract role is filled by the three stand-ins below, all read end-to-end
-  this pass. This is the **fifth consecutive** pass to report the same absent
-  path; the finding is not a transient.
-- `~/.hermes/bot/docs/routstr-delist.md` — present, 197 lines, md5
-  `e385af98b9c142eec736672d4dcca290`, **byte-identical** to the repo copy
-  (probe A0c), so `docs:N` below applies to both.
-- `~/.hermes/bot/scripts/routstr_delist.py` — present, 829 lines, md5
-  `2ea724ef08d857cd7b88a957300e70b4`, verified **byte-identical** to repo
-  `src/routstr_delist.py` (probe A0a). All `routstr_delist.py:N` references
-  apply to both copies.
-- `~/.hermes/bot/tests/test_routstr_delist.py` — present, 752 lines, md5
-  `031851b356f0de4089512f02f13f05cc`, verified **byte-identical** to repo
-  `tests/test_routstr_delist_contract.py` (probe A0b). Its loader falls back to
-  the DEPLOYED script (`contract:50`), so it exercises both copies. Referenced
-  below as `contract:N`.
+**Corrections to the earlier record (measured this pass, not copied).** (1) The claim that a firing dry-run "sets `confirmed` without a remote verify" is not reproducible as stated: the module sets its *local* flag at `routstr_delist.py:679-681`, but only the verify path ever writes `res["confirmed"]` (`routstr_delist.py:685`), so the printed result of a dry run carries no `confirmed` key at all. (2) The residual "a failed relist never ticks the breaker — `consecutive_failures` is absent" is mis-stated for the current script: the key is always written (`routstr_delist.py:750-751`, explicitly "keep the key greppable"), so only the *value* proves non-escalation. (3) Earlier passes' LOW gap "the ladder is never materialised in any test; scoping rests on substring assertions" is false against the current artifacts: the contract suite builds a ladder artifact at `contract:108-110` and its Case 6 (`contract:467-493`) asserts ladder byte-identity at `contract:480`, `upstream_providers` row-identity via the query at `contract:160`, and that no executed payload names the table at `contract:483`. (4) The freshness boundary is inclusive and must be measured with the injected clock — `feed_is_stale` is `not (0 <= age <= max_age_s)` (`routstr_delist.py:494`) and takes a `now=` override, which is how the exact-1800 s case was pinned.
 
-Conventions: `routstr_delist.py:N` = the script (both copies); `contract:N` =
-contract suite (752 lines, 25 cases); `tests:N` = repo `tests/test_routstr_delist.py`
-(1172 lines, the main suite); `docs:N` = repo `docs/routstr-delist.md` (197 lines).
-Citation counting rule (probe D2/D4): every occurrence of an artifact file name or
-doc alias immediately followed by `:NNN`; a range `A-B` is counted at `A` only.
-The `citation-count` comment at the top of this file is machine-checked against
-that measurement by probe D4, so the count cannot drift silently again.
+**Probe reliability (false-FAIL episode, disclosed).** The harness's first run read `82 checks: 82 PASS, 4 FAIL`. All four FAILs were defects in the probe, not in the artifact, and each was fixed and re-measured: (a) B7f left the "lying relist" fault still armed for the follow-up run; (b) B8a asserted a `confirmed` key on an output shape that never carries one (see correction 1); (c) C4a measured the 1800 s boundary with the live wall clock and lost it to microseconds of real elapsed time (fixed by the `now=` injection); (d) C15a asserted the *absence* of a key the script deliberately keeps greppable (fixed to a value check). A misleading detail string in check D6a (a `\\d` inside a raw-string f-string, which matches a literal backslash) was also corrected after it printed `[0, 0, 0]` beside a passing assertion.
 
-Execution evidence this pass (TMPDIR moved off `/tmp` to
-`~/.cache/tmp-f13-pass15` for every run):
-`pytest tests/ -q` → **121 passed in 4.79s**; `pytest tests/test_routstr_delist_contract.py -q`
-→ **25 passed in 2.18s**; `pytest tests/test_routstr_delist.py -q` → **96 passed in
-4.82s**; `python3 -m unittest discover -s tests` → **Ran 96 tests, OK**; deployed
-copy `cd ~/.hermes/bot && pytest tests/test_routstr_delist.py -q` → **25 passed in
-1.40s**; `crontab -l | grep -ci routstr` → **0** (3 crontab lines total, none
-referencing routstr, so the 5-minute SLA has no live caller and the fail-safe
-apparatus is latent — a documented deferral at `docs:112-115`, not a regression).
-No reviewed artifact was modified: all three md5s unchanged before and after
-(A0a/A0b/A0c), and the only paths written by this pass are this file and the probe
-harness under `docs/reviews/routstr_f13_probes/`. `~/.hermes/bot` is not a git
-repository, so the required local commit lands in the workspace repo
-(`merchant-routing`).
-
-**Corrections new in this pass** (all defects in the *review record*; none in the
-reviewed code, and none in the deployed artifacts, whose md5s did not move):
-
-1. **The fourteenth pass's own citation total does not reproduce against the
-   document that states it — LOW (record defect, now structurally prevented).**
-   Its preamble recorded "**158** in the document below (119 `routstr_delist.py`
-   + 11 `contract` + 13 `tests` + 15 `docs`)". Measured against that very text
-   with the counting rule above (probe D2, and independently by classified
-   extraction): **153** citations — **114** `routstr_delist.py` + **11**
-   `contract` + **13** `tests` + **15** `docs`. The three non-script buckets
-   reproduce **exactly**, which isolates the drift to the script bucket (119
-   claimed, 114 present) and to the total; the earlier figure is treated as
-   superseded by measurement rather than as a fabrication, since the fourteenth
-   pass's own pair list is not available to compare against. This is the third
-   consecutive pass to record drift in a provenance count (the fourteenth pass
-   made the same observation about the thirteenth), which is why this pass makes
-   the number **machine-checked**: probe D4 parses the `citation-count` comment
-   above and fails if it disagrees with the measurement.
-2. **A quiet run's state shape is mis-described, and the probe label attached to
-   it is wrong — MEDIUM (record defect; it misstates a fail-safe-relevant
-   invariant).** The fourteenth pass's Finding 3 item 1 read: "With no `--preds`
-   the feed is empty (probe **C12**: a quiet run stores only `ts`/`last_dry_run`)".
-   Both halves are wrong. (i) `C12` is defined *elsewhere in the same document*
-   (its Finding 3 item 5) as "dry-run never counts toward the breaker", so the
-   label does not denote the probe that measures a quiet run's state. (ii) The
-   claimed shape is false: a state written by a **quiet** run contains
-   `delisted`, `snapshot` and `ts` — measured this pass as
-   `['delisted', 'snapshot', 'ts']` (probes A11b/A11d) — and
-   **never** `last_dry_run`, which is written only by the FIRED dry-run path
-   (`routstr_delist.py:705`). The parenthetical describes the fired dry-run state
-   (probe A10, whose keys really are only `ts` + `last_dry_run`), not a quiet
-   run. This is the same conflation that correction 3 turns into a live finding.
-3. **"Dry-run is intent-only" is stated unqualified, but the purity guarantee
-   holds only on the firing path — MEDIUM (behaviour + doc defect).** See
-   Finding 1 item 8 and gap (e): on the non-firing path `--dry-run` writes the
-   state file and consumes the acceleration baseline, which falsifies the
-   contract's flat "no baseline consumption" claim at `docs:87-89` and means a
-   diagnostic run can silently disarm a real trigger (loss-of-protection
-   direction). The fourteen-pass text asserted the guarantee without the
-   qualifier in both its Finding 1 item 7 and its Finding 3 item 1.
-
-**Standing corrections re-verified this pass** (kept so the record is
-self-contained; each was re-measured, not copied):
-
-- the `test_manual_override_is_never_gated_on_feed_staleness` name bus lives in
-  the **contract** suite at `contract:427`, not in the main suite (probe D1
-  carries it with its expected text; its sibling `tests:980` is the main-suite
-  equivalent and both were read back);
-- the five SQL references have two line conventions, and this pass states both
-  explicitly: raw SQL text at `routstr_delist.py:355`, `routstr_delist.py:361`,
-  `routstr_delist.py:371`, `routstr_delist.py:394`, `routstr_delist.py:408`
-  (probe A2a, comment lines excluded — identical to the AST string-literal start
-  lines measured by probe A1a), carried by payload builders whose first fragment
-  begins at `routstr_delist.py:369`, `routstr_delist.py:392` and
-  `routstr_delist.py:406`;
-- the filesystem write surface includes the state **directory** created at
-  `routstr_delist.py:229` (probe A5a), not just the state file.
-
-**New observations this pass** (one MEDIUM, one LOW):
-
-- **MEDIUM:** dry-run purity is conditional on firing — a non-firing `--dry-run`
-  writes state and consumes the acceleration baseline (Finding 1 item 8, gap (e),
-  probes A11a–A11d);
-- **LOW:** a `--preds-key` that matches no feed row is silently indistinguishable
-  from a healthy quiet run — rc 0, `preds_error=false`, `preds_stale=false`, zero
-  round-trips (Finding 3, residual (j), probe C14).
-
-## Finding 1 — Safety: SALE-delisting never disables the provider or touches the ladder — severity: **OK** (gaps: one MEDIUM dry-run-purity gap, rest LOW)
-
-1. **Every write path enumerated on the parsed source.** The SQL inventory over
-   the parsed AST (probe A1a/A1c, which stops at every string literal so an
-   implicitly concatenated f-string payload is counted once) finds exactly **5**
-   SQL table references, all on `models`: `routstr_delist.py:355`
-   (`UPDATE models SET enabled=0 WHERE enabled=1;`), `routstr_delist.py:361`
-   (`UPDATE models SET enabled=1;`, legacy blanket builder),
-   `routstr_delist.py:371` (the pull payload's
-   `SELECT name FROM models WHERE enabled=1`, payload starting at
-   `routstr_delist.py:369`), `routstr_delist.py:394` (the scoped relist payload's
-   `UPDATE models SET enabled=1 WHERE name IN (…)`, payload starting at
-   `routstr_delist.py:392`) and `routstr_delist.py:408` (the verify payload's
-   `SELECT COUNT(*) FROM models WHERE enabled=1`, payload starting at
-   `routstr_delist.py:406`). The materialised table set is exactly `['models']`
-   (probe A1b); zero statements reference any other table. In particular
-   `upstream_providers` (the provider ladder) has **3 occurrences, all inside
-   docstrings** — text at `routstr_delist.py:35`, `routstr_delist.py:352` and
-   `routstr_delist.py:771` — and **zero in executable code** (probe A3a: all
-   three literal start lines fall inside docstring spans; probe A3b: **285**
-   executable string literals inspected, none naming it). Mutating verbs are
-   exactly 3 UPDATEs (`routstr_delist.py:355`, `routstr_delist.py:361`,
-   `routstr_delist.py:394`); the other 2 are read-only SELECTs.
-2. **Executed, not merely asserted.** Probe A6 runs the module's REAL pull
-   payload against the stand-in node: the ladder artifact is **byte-identical**
-   after the delist (A6b, 340 B), `upstream_providers` is **row-identical** (A6c,
-   rows `openrouter`/`routstr`/`zai`), the `routstr` provider is still enabled
-   and a ladder candidate (A6d), all 3 advertised models are disabled and a
-   pre-disabled operator row stays disabled (A6e), and no executed payload ever
-   names `upstream_providers` (A6f). The same property is pinned semantically by
-   `contract:468` (`TestSemanticGuardLadderUntouched`; ladder fixture written at
-   `contract:108`, payload assertion at `contract:483`, provider-still-enabled
-   assertion at `contract:487`) and, in the main suite, by `tests:302`
-   (`TestSaleNotProvider`).
-3. **Scoped relist cannot resurrect operator-disabled rows.** Probe A7: after a
-   confirmed delist, `--relist` restores exactly the 3 captured names, leaves the
-   pre-disabled row at 0, and the ladder artifact is still byte-identical. The
-   parameterized builder is `routstr_delist.py:394`, asserted end-to-end at
-   `tests:1166`.
-4. **Blanket relist is refused before any remote call.** With no captured names,
-   `routstr_delist.py:602` refuses — probe A8: rc 1, `action=relist_refused`,
-   **zero** backend round-trips, and the state file was not even created (A8b).
-   The blanket SQL is reachable only via the explicit opt-in at
-   `routstr_delist.py:526`; documented at `docs:29`. Probe B7f shows the cost of
-   taking that opt-in while the scoped set is gone: every row, including a
-   pre-disabled operator row, comes back enabled (Finding 2 item 5).
-5. **Command-injection surface is closed.** Exactly **2** `subprocess.run` sites
-   exist (`routstr_delist.py:459` nak publish, `routstr_delist.py:808` ssh
-   docker-exec), with **`shell=True` count = 0** and **`eval`/`exec` call sites =
-   0** (probe A4a/A4b). The remote pipeline is built across
-   `routstr_delist.py:414` and `routstr_delist.py:423` as a single shlex-quoted
-   argv element; probe A9 confirms the argv is 3 elements and that
-   `shlex.split(cmd[2])` round-trips to
-   `["docker", "exec", "routstr public", "python3", …]` intact even with a space
-   in the container name. Pinned at `tests:345` (the round-trip itself at
-   `tests:354`) and documented at `docs:137`.
-6. **Filesystem writes are confined to the state path.** The complete write
-   surface is `os.makedirs` of the state directory (`routstr_delist.py:229`), the
-   single write-mode `open()` of the tmp file (`routstr_delist.py:231`),
-   `os.replace` of that tmp file (`routstr_delist.py:235`) and `os.unlink` of a
-   stale tmp (`routstr_delist.py:243`) — all inside `save_state`'s atomic
-   tmp-swap. Probe A5a enumerates every `os.*` write call AND every `open()` mode
-   in the module: exactly one write (`:231`) against three reads
-   (`routstr_delist.py:214`, `routstr_delist.py:457`, `routstr_delist.py:476`).
-   Nothing outside the state path is written, and the override marker is only
-   `isfile`-probed (`routstr_delist.py:172`).
-7. **Dry-run is intent-only — on the firing path.** Probe A10: `--manual
-   --dry-run` performs **zero** remote round-trips (A10a), introduces **no**
-   durable `delisted` flag, and leaves state keys `ts` + `last_dry_run` only
-   (A10b). Wired at `routstr_delist.py:699`; pinned by `contract:731`
-   (`test_dry_run_publishes_no_event_and_flips_no_flag`) and `tests:1072`
-   (`TestDryRunPurity`). **This guarantee is conditional — see item 8**; both
-   suite pins exercise `--manual --dry-run`, i.e. only the firing path.
-8. **NEW — dry-run purity does NOT extend to the non-firing path (MEDIUM).** The
-   quiet path at `routstr_delist.py:651` is reached whenever `fire` is false, and
-   it does not test `args.dry_run`: it calls `update_state(...)` and
-   `save_state(...)` at `routstr_delist.py:651-654` exactly as a real run does.
-   Probe A11 measures it end-to-end with a fresh feed and a pre-existing
-   `snapshot` of `{"zai␟1h": 11.0}` whose successor value (10.0 h) is a 1.0 h
-   move — below the 2.0 h threshold, so the run is genuinely quiet:
-   **A11a** rc 0, `action=none`, zero remote round-trips (purity holds for
-   *remote* action); **A11b** the persisted `snapshot` is **refreshed to
-   `{"zai␟1h": 10.0}`**, i.e. the acceleration baseline **IS consumed**;
-   **A11c** no `last_dry_run` key is written, so the dry run leaves **no trace
-   at all** of having happened; **A11d** the resulting state is *identical*
-   (modulo `ts`) to the state a real quiet run leaves — measured
-   `['delisted', 'snapshot', 'ts']` in both. Consequences: (i) `docs:87-89`
-   claims dry-run does "no baseline consumption", which is false on this path, so
-   an operator who previews a run with `--dry-run` while a live feed is present
-   has, in the protection-relevant case, consumed the very movement the next cron
-   tick would have fired on — a **loss-of-protection** direction, not a safe one;
-   (ii) `last_dry_run` is not even written, so the disarm is invisible. Not a
-   BLOCKER: no remote mutation occurs, the quiet path is the normal cron path,
-   and an operator must invoke `--dry-run` with a live feed between ticks to
-   trigger it. Fix is either one word of documentation (qualify `docs:87-89`) or
-   one line of code (guard the quiet-path state write behind `not args.dry_run`,
-   and record `last_dry_run` on it).
-
-Gaps (non-blocking): **(e) MEDIUM** is item 8 above. All others LOW:
-**(a)** `--ssh-target`/`--container` (`routstr_delist.py:536`,
-`routstr_delist.py:537`) let an operator point the mutating payload at any
-host/container — by design, nothing validates that the target is the sell node;
-**(b)** the payloads hard-code `/app/data/keys.db` ×4 (`routstr_delist.py:370`,
-`routstr_delist.py:385`, `routstr_delist.py:393`, `routstr_delist.py:407`) — a
-container layout change would mutate whatever DB lives at that path;
-**(c)** `save_state`'s return value is ignored at all **8** call sites
-(`routstr_delist.py:565`, `routstr_delist.py:622`, `routstr_delist.py:629`,
-`routstr_delist.py:638`, `routstr_delist.py:654`, `routstr_delist.py:710`,
-`routstr_delist.py:732`, `routstr_delist.py:752`; probe A5b confirms no call site
-consumes it), so a failed write after a CONFIRMED delist
-(`routstr_delist.py:752`) would silently diverge local state from remote reality
-(cross-ref findings 4–5); **(d)** the pull payload reads the enabled set and then
-disables it in a separate statement (`routstr_delist.py:371` then
-`routstr_delist.py:372`), so a row enabled by another writer inside that window
-is disabled without being captured and would not be restored by a scoped relist —
-narrower than any operator action and fail-safe in the protection direction, but
-real.
-
-**Verdict 1: OK** — no path disables the routstr provider or leaves the `models`
-listing table, the ladder protection is proven by execution and by a semantic
-test, and every gap is LOW except the newly measured MEDIUM dry-run-purity gap
-(item 8 / gap (e)), which is a diagnostic-path guarantee defect rather than a
-safety hazard.
-
-## Finding 2 — Post-delisting confirmation via re-fetch — severity: **OK** (delist requirement MET; residual: MEDIUM relist asymmetry, LOWs itemized)
-
-1. **The required independent re-fetch exists.** `verify_pull_payload()`
-   (`routstr_delist.py:400`, SQL text at `routstr_delist.py:408`) is a read-only
-   `SELECT COUNT(*) FROM models WHERE enabled=1` — probe B1 confirms the payload
-   contains **no** mutating verb (B1a) and is exactly that COUNT (B1b). It runs
-   as a SEPARATE ssh round-trip via `_SshBackend.verify`
-   (`routstr_delist.py:790`), invoked after the pull at `routstr_delist.py:682`
-   inside the attempt loop (`routstr_delist.py:671`). Success requires
-   `vres.get("ok") is True and vres.get("count") == 0`
-   (`routstr_delist.py:683`, matched in source by probe B2a); `confirmed` is only
-   then set (`routstr_delist.py:687`), and only `confirmed` unlocks the
-   `delisted=True` write (`routstr_delist.py:747`) and rc 0. Suite pins:
-   `contract:334` (happy path is exactly `["pull", "verify"]`), `tests:566`
-   (`TestRefetchConfirmation`).
-2. **A lying pull is refuted by execution.** Probe B4 simulates a pull that
-   self-reports `ok` but whose UPDATE never lands: rc 1, `action=delist_failed`,
-   `verify.count == 3`, **no** `delisted` flag, `consecutive_failures == 1`, and
-   the retry sequence is exactly `["pull", "verify", "pull", "verify"]`
-   (`MAX_PULL_ATTEMPTS = 2`, `routstr_delist.py:75`). Pinned end-to-end at
-   `contract:346` (`test_unverified_pull_is_a_failed_delist`) and on the breaker
-   path at `tests:816` (`TestCircuitBreaker`).
-3. **Happy path is verified and recorded.** Probe B3: rc 0, `confirmed=true`,
-   `verified_count == 0`, exactly one pull + one verify, and a durable
-   `delisted=true` (B3b) carrying the captured advertised names in
-   `pulled_models` — the pre-disabled operator row is *not* captured, which is
-   what makes the scoped relist of item 3 in Finding 1 exact.
-4. **Garbage cannot confirm.** The verify result passes through
-   `_SshBackend._run` (the round-trip is bounded by `min(SSH_TIMEOUT_S,
-   remaining)` at `routstr_delist.py:801-806`; the result shape is settled at
-   `routstr_delist.py:822`); a non-zero rc, unparseable stdout, or a missing
-   `ok`/`count` key all yield a non-confirming result, because `None == 0` is
-   False at `routstr_delist.py:683` (probe B8a). Probe B5a shows a verify
-   **transport** failure is an attempt failure, not a success: rc 1, kinds
-   `["pull", "pull"]` (the verify never reaches the node, so nothing is
-   recorded), no flag, `consecutive_failures == 1`. Failure direction is
-   therefore always safe: garbage can only fail the run, never confirm it.
-5. **Residual — MEDIUM: the relist direction has no symmetric re-fetch.**
-   Relist success is gated on the round-trip self-report alone
-   (`routstr_delist.py:626`), and on that self-report the run clears
-   `delisted` and pops `pulled_models` (`routstr_delist.py:635`). Probe B7
-   measures the asymmetry end-to-end: after a confirmed delist, `--relist`
-   yields `kinds == ["relist"]` — **no verify follows** (B7a). A lying relist
-   (rc 0, ok printed, UPDATE not landed — the same fault class the contract
-   deemed must-fix for delist) is reported as `action=relist`, **rc 0** (B7b),
-   while the listing is measurably **NOT** restored (B7c) and the scoped name set
-   is destroyed (B7d, `pulled_models` → absent). A subsequent scoped `--relist`
-   is then refused (`routstr_delist.py:602`; probe B7e), so recovery forces
-   `--relist-any` (`routstr_delist.py:526`), which in probe B7f re-enables
-   **every** row — including the operator-disabled one — or a fresh
-   delist/relist cycle. The contract mandates the re-fetch only for a fired
-   delist (`docs:69`), so this is an asymmetry rather than a contract breach, but
-   the fix is cheap: verify after relist (e.g. a per-name re-read, or
-   `COUNT(*) > 0`) before popping `pulled_models`.
-6. LOW notes: **(a)** the dry-run firing path sets `confirmed=True` without any
-   remote verify (`routstr_delist.py:679` is `if args.dry_run:`,
-   `routstr_delist.py:680` is `confirmed = True  # intent only: no remote
-   verify`) — intent-only, there is nothing to confirm; **(b)** the verify
-   round-trip shares the ssh transport, timeout bound and last-line JSON parsing
-   with the pull (the parse/clamp live at `routstr_delist.py:806` and
-   `routstr_delist.py:822`), so it is independent in the contract's sense of a
-   separate round-trip (`docs:69`) but a systematic transport-level fault (wrong
-   container, shadowed DB path) could satisfy both — directionally safe, since a
-   fooled verify can only keep the run failing into the breaker.
-
-**Verdict 2: OK** — the required post-delisting confirmation exists, is a
-separate read-only round-trip, gates the durable flag, and is pinned by both
-suites; one MEDIUM residual (relist asymmetry) and two LOW notes above.
-
-## Finding 3 — Fail-safe on absent, garbage and stale monitor signals — severity: **OK** (residuals: LOW)
-
-Everything that can reach a delist funnels through
-`fire = args.delist or dec["fire"]` (`routstr_delist.py:649`), where
-`dec["fire"] = bool(accel or var or override)` (`routstr_delist.py:317`).
-
-1. **Absence — OK.** With no `--preds` the feed is empty (`_read_preds`,
-   `routstr_delist.py:468`, returns `[]` for a falsy argument), acceleration
-   requires non-empty preds on both sides (`routstr_delist.py:107`) and variance
-   requires non-empty preds (`routstr_delist.py:143`), so a first run with no
-   stored baseline can never fire (`contract:308`,
-   `test_first_run_without_baseline_is_quiet`). Manual override stays available
-   by design. **Correction:** the fourteenth pass supported this item with "probe
-   C12: a quiet run stores only `ts`/`last_dry_run`". That is wrong twice over —
-   `C12` denotes the breaker/dry-run probe, and a quiet run's state keys are
-   `['delisted', 'snapshot', 'ts']`, never `last_dry_run` (probes A11b/A11d;
-   `last_dry_run` is written only at `routstr_delist.py:705`, on the FIRED
-   dry-run path). The absent-feed conclusion stands on `routstr_delist.py:107`
-   and `routstr_delist.py:143` plus `contract:308`, which is why it is restated
-   here with those citations instead of the mis-attributed probe.
-2. **Garbage — OK.** `_read_preds` (`routstr_delist.py:468`) never raises, drops
-   non-dict entries (`routstr_delist.py:479`) and returns `[]` on any parse
-   failure. An explicitly requested but unusable feed is a FEED ERROR
-   (`preds_error`, `routstr_delist.py:585`) with rc 1 when nothing fired
-   (`routstr_delist.py:660`). Probes: invalid JSON → rc 1, `preds_error=true`,
-   `action=none`, zero remote round-trips (C4a); a feed that is both garbage AND
-   aged surfaces as `preds_error=true` with `preds_stale=false`, because
-   `raw_preds` is empty at `routstr_delist.py:589` (C4c), both exiting 1. **The
-   stored baseline is never wiped** — `update_state` only overwrites the snapshot
-   when preds is non-empty (`routstr_delist.py:261`); probe C2 shows the snapshot
-   surviving byte-for-byte on the stale path, and probe C7 on the path where a
-   delist actually FIRES. Type-guards: `uncertainty` is isinstance-guarded with
-   bool explicitly excluded (`routstr_delist.py:152`, pinned by `tests:146`) and
-   `exhausts_in_hours` is guarded too (`routstr_delist.py:196`); probes C6a/C6b
-   show string, bool, None and non-dict entries produce no fire, no crash, and an
-   all-empty trigger set through the CLI. (Probe C6d, residual (g), shows the
-   same malformed rows DO raise `AttributeError` if the pure helpers are called
-   directly.)
-3. **Stale — OK.** `STALENESS_S = 1800` (`routstr_delist.py:78`);
-   `feed_is_stale` (`routstr_delist.py:485`) ends in
-   `return not (0 <= age <= max_age_s)` (`routstr_delist.py:494`), with an
-   `OSError` (missing file / unreadable) short-circuiting to `True`
-   (`routstr_delist.py:495-496`), i.e. undeterminable age and a future mtime are
-   BOTH treated as stale. Probe C1 measures the matrix: missing → stale, aged
-   3600 s → stale, future mtime → stale, fresh → not stale, **age exactly 1800 s
-   → not stale** (boundary inclusive), age 1800.5 s → stale. Wiring: a stale feed
-   zeroes the preds **before** trigger evaluation (`routstr_delist.py:589`,
-   `routstr_delist.py:591-592`) so the level-based variance trigger cannot fire
-   on dead data, and before any baseline refresh. Probe C2: stale feed → rc 1,
-   `preds_stale=true`, `action=none`, zero remote round-trips, snapshot untouched;
-   probe C2c is the control showing the identical numbers with a FRESH mtime DO
-   delist, which proves the guard rather than mere absence of input. Suite pins:
-   `tests:928` (`TestStalenessGuard`), `tests:937` (`test_stale_feed_never_triggers`),
-   `tests:968` (`test_staleness_threshold_boundary`), `tests:995`
-   (`test_stale_feed_baseline_not_consumed`). The guard is documented at
-   `docs:56-58`.
-4. **Manual override is deliberately never gated on freshness — verified.**
-   Probe C7: a stale feed plus `--manual` delists (rc 0, `preds_stale=true`
-   observed but not obeyed, exactly `["pull","verify"]` executed) **and leaves
-   the stored baseline unrefreshed** (the snapshot measured before the run is
-   present unchanged after it, `{"zai␟1h": 100.0}`), so overriding the freshness
-   guard does not let dead data pollute the acceleration baseline. The same
-   override behaviour holds when the feed is unparseable rather than merely old
-   (C7c: rc 0, `preds_error=true`, `action=delist`). Pinned at `contract:427`
-   (`test_manual_override_is_never_gated_on_feed_staleness`) and `tests:980`
-   (`test_stale_feed_exit_zero_when_override_fires`); documented at `docs:60`.
-5. **Budget and breaker fail closed.** Probe C10: an exhausted action budget
-   returns `ok=false` with an `action budget exhausted` error and spawns **zero**
-   subprocesses (bound at `routstr_delist.py:801-806`); with 5 s of budget left
-   the per-round-trip timeout is clamped to the remaining budget (C10b measures
-   within **0.01 s** of the 5 s deadline — 4.99996–4.99999 s across runs — i.e.
-   `min(SSH_TIMEOUT_S, remaining)`).
-   Probe C11: three consecutive failed runs give rc `[1, 1, 3]`, a durable
-   `blocked=true` at `consecutive_failures == BREAKER_THRESHOLD`
-   (`routstr_delist.py:730`, `routstr_delist.py:739`), and a blocked run then
-   refuses **all** remote action (`action=blocked` at `routstr_delist.py:569`,
-   returning 3 at `routstr_delist.py:578`, zero new backend round-trips) until
-   `--unblock` (`routstr_delist.py:529`). Probe C12: dry-run never counts toward
-   the breaker.
-
-Residuals (LOW):
-
-- **(a) `--preds-key` scoping is opt-in, default unscoped.** Filtering happens
-  only when the flag is passed (`routstr_delist.py:597`); `evaluate_triggers`
-  itself passes **no** key to `variance_jumped` (`routstr_delist.py:303`), as its
-  signature confirms — `def evaluate_triggers(preds_now, prev_state, *, override=…,
-  move_hours=…, variance_threshold=…)` at `routstr_delist.py:272` has no `key`
-  parameter, while the optional filter it never passes lives in the callee at
-  `routstr_delist.py:132` (`def variance_jumped(preds, *, threshold=…, key=None)`).
-  Probe C8 reproduces it: an openrouter-only feed with `uncertainty 0.95` fires
-  the routstr delist with no flag (C8a) while the same feed with `--preds-key zai`
-  is quiet (C8b); `inspect.signature` confirms no implicit filter (C8c). Scoping
-  is documented (`docs:54`) and carried in the runbook cron example
-  (`docs:106`), so the residual is operator-omission risk. Caveat: `docs:55`
-  states the guarantee unconditionally ("another provider's variance spike can
-  never pull the routstr SALE") — the doc should say "with `--preds-key`".
-- **(b) mtime-only freshness** (`routstr_delist.py:485`, `routstr_delist.py:494`):
-  a writer that rewrites the feed with OLD data refreshes the mtime and bypasses
-  the guard (content-stale / mtime-fresh is undetectable). The contract accepts
-  mtime (`docs:57`); an embedded `generated_at` check would be stronger.
-- **(c) Cosmetic**: `_hours` accepts a bool while the variance guard excludes it
-  (`routstr_delist.py:152` vs the hours helper at `routstr_delist.py:196`) —
-  arithmetic-safe, no crash path (probe C6c); the override marker is
-  presence-based with no TTL (`routstr_delist.py:172`), which is
-  operator-controlled by design.
-- **(d) Cross-ref findings 4–5**: the quiet-run state write
-  (`routstr_delist.py:654`), like all 8 `save_state` call sites, ignores the
-  return value (probe A5b).
-- **(e) An empty but valid `--preds` array is reported as a feed ERROR.**
-  `preds_error = bool(args.preds) and not raw_preds` (`routstr_delist.py:585`)
-  treats `[]` exactly like unreadable JSON, so a predictor that legitimately
-  produced no rows makes every run exit 1 with `preds_error=true` (probe C5a:
-  rc 1, `preds_error=true`, `action=none`, zero round-trips). The contract
-  describes the error state as an "**unreadable/corrupt** `--preds` feed"
-  (`docs:84`), which `[]` is not. Direction is safe — it can only suppress a
-  fire — so this is a monitoring/exit-code wart, not a hazard.
-- **(f) A scoped run narrows the durable baseline to the scoped key.**
-  `evaluate_triggers` is handed the filtered list (`routstr_delist.py:597`), and
-  a run that continues writes `snapshot_preds(filtered_preds)`
-  (`routstr_delist.py:747` → `routstr_delist.py:261`), so after `--preds-key zai`
-  the snapshot holds only that key's windows — probe C9a measures
-  `snapshot == {"zai␟1h": 10.0}` while the feed carried both keys. Other keys then
-  have no baseline until a fresh unscoped baseline exists, which can only
-  *suppress* a later acceleration fire. Fail-safe direction; worth a line of
-  documentation, since the runbook cron example (`docs:106`) is permanently
-  scoped.
-- **(g) The pure trigger helpers are not type-hardened.** The non-dict guard lives
-  only at the `_read_preds` boundary (`routstr_delist.py:479`), not in the helpers
-  the module documents as pure and unit-testable: calling
-  `evaluate_triggers([None, "x", 1], None)` directly raises
-  `AttributeError: 'NoneType' object has no attribute 'get'` (probe C6d), reached
-  via the call at `routstr_delist.py:303` from `routstr_delist.py:272`. Not
-  reachable through the CLI, which normalises first (C6a/C6b), so this is a
-  defence-in-depth note for any future in-process caller (e.g. a monitor
-  importing the module): hardening the helpers against non-dict rows, or
-  documenting the "normalised input" precondition, would close it.
-- **(h) A failed RELIST never ticks the circuit breaker.** The delist failure path
-  increments and escalates (`routstr_delist.py:724` `fails += 1`;
-  `routstr_delist.py:730` `newly_blocked = fails >= BREAKER_THRESHOLD`;
-  `routstr_delist.py:739` rc 3 when blocked), but the relist failure path
-  (`routstr_delist.py:626`) only records `last_pull_error` and returns 1. Probe
-  C13a: after a confirmed delist, four consecutive transport-dead `--relist` runs
-  give rc `[1, 1, 1, 1]` with `blocked` never set and `consecutive_failures` never
-  written — so a permanently broken relist (the exact mechanism an operator needs
-  to *undo* a delist) loops at rc 1 with no escalation to BLOCKED and no
-  `--unblock` hint. Fail-safe-adjacent in the other direction from the rest of
-  this list: the escalation that protects the remote node from repeated mutation
-  is asymmetrically unavailable for the restore path. **LOW** (the relist is
-  operator-initiated, and each failed run is visible in `last_pull_error`), but it
-  is a real gap in the fail-safe story.
-- **(i) A BLOCKED state refuses `--relist`, so the "explicit action clears the
-  breaker" reset is reachable only while unblocked.** The blocked gate
-  (`routstr_delist.py:569`, returning 3 at `routstr_delist.py:578`) precedes the
-  relist branch, so the reset at `routstr_delist.py:636` can only run for a relist
-  that was already unblocked. Probe C13c: with a durable `blocked=true`,
-  `--relist` exits 3 with `action=blocked` and **zero** new backend round-trips.
-  Probe C13b shows the reset does work in its intended range — a successful relist
-  takes accumulated delist failures from 2 back to 0. So the operator must use
-  `--unblock`, then `--relist`. **LOW** (reachability/documentation, not a hazard:
-  refusing is the fail-safe direction).
-- **(j) NEW — a `--preds-key` that matches no feed row is silent.** The filter at
-  `routstr_delist.py:597` can empty an otherwise valid feed, but `preds_error` is
-  computed at `routstr_delist.py:585` from the UNFILTERED list, so a scoped run
-  whose key matches nothing is reported as a healthy quiet run. Probe C14: an
-  openrouter-only feed with `--preds-key zai` gives rc **0**, `action=none`,
-  `preds_error=false`, `preds_stale=false` and zero round-trips — byte-for-byte
-  the output of a genuinely quiet run. A typo'd or renamed `--preds-key`
-  therefore disables the trigger permanently and invisibly (no error flag, no
-  non-zero exit for cron to catch), which is a monitoring-direction gap rather
-  than a hazard — the damage is a delist that never happens, never a delist that
-  shouldn't. **LOW**; a one-line fix would surface a distinct
-  `preds_key_unmatched` flag (or an rc-1) when a given `--preds-key` filters the
-  feed to nothing.
-- **Cross-ref:** the MEDIUM dry-run-purity gap is stated once, as Finding 1 item 8
-  / gap (e); it is listed here only for completeness because its failure direction
-  (a consumed acceleration baseline that never fires) is fail-safe-relevant.
-
-**Verdict 3: OK** — absence and garbage are safe, staleness is guarded in the
-fail-safe direction with a fresh-input control, the override is intentionally
-ungated and does not pollute the baseline, and budget/breaker semantics fail
-closed; residuals are LOW as itemized, with the two MEDIUM/LOW new observations
-cross-referenced to Finding 1 and residual (j).
+**Disclosed deviations.** Two commands were refused by the operator consent guard: a composite recon command containing an inline `python3 -c`, and a shell redirect of the probe transcript to a path outside the repo. Neither refusal left a claim unmeasured — the file line counts and the determinism proof were obtained through the harness itself, which prints its own measurements and a transcript digest.
 
 ---
 
-Provenance: fifteenth offload pass for findings 1–3. Earlier passes (files at
-this path; Gate 2.5 cold review `docs/reviews/routstr_delist_review.md`)
-correctly found Finding 2 REFUTED-HIGH (no re-fetch) and Finding 3 PARTIAL-HIGH
-(no freshness guard) against the pre-fix script, and subsequent passes
-re-adjudicated both OK against the current 829-line artifacts. This pass
-independently re-derives the same three verdicts: script read end-to-end in both
-copies (byte-identical, md5 `2ea724ef08d857cd7b88a957300e70b4`, 829 lines),
-contract suite read end-to-end and executed against the deployed copy,
-**104** cited file:line pairs re-verified against their files with their expected
-text (probe D1), all **175** `file:line` citations in this document re-checked to
-resolve in the file they name (probe D2, zero unresolved; count machine-checked
-by probe D4 against the `citation-count` comment above), **74** hermetic probe
-checks PASS (probe `docs/reviews/routstr_f13_probes/probe_f13_pass15.py`, run
-twice — against the fourteenth-pass text and against this text — with **74/74**
-both times; no transcript file archived this pass, the harness prints its own
-measurements and is committed), suites 121 + 96 + 25 green plus the deployed copy
-25 green, `crontab -l` re-checked (zero routstr entries, 3 lines total). Verdicts:
-**1 OK** (one MEDIUM dry-run-purity gap, rest LOW), **2 OK** (MEDIUM
-relist-asymmetry residual), **3 OK** (LOW residuals, two new). Artifact-path
-report: the contract markdown is STILL MISSING at the bot path (**HIGH**), now for
-the fifth consecutive pass; the bot `routstr-delist.md` copy is byte-identical to
-the repo copy. Three corrections to the earlier record — the non-reproducing
-citation total, the mis-described quiet-run state shape with its wrong probe
-label, and the unqualified dry-run guarantee — plus two new observations are
-itemized in the preamble. No reviewed artifact was modified. `~/.hermes/bot` is
-not a git repository, so the required local commit lands in the workspace repo
-(`merchant-routing`) covering `docs/reviews/findings_1_3.md` and the probe
-harness, with an identical copy of this file at the task-mandated path
-`~/.hermes/bot/docs/reviews/findings_1_3.md`.
+## Finding 1 — Safety: delisting the SALE must never disable the routstr provider, and never touch the T470 flat-router ladder — severity: **OK** (gaps: 1 MEDIUM, 7 LOW)
+
+**Requirement under test.** The delist removes only the routstr **SALE** — the advertised model listing on the routstr-public sell node — while the routstr **provider** stays enabled and routable in the T470 ladder. Requirement is stated at `docs:11-16` and its enforcement at `docs:18-21`.
+
+1. **Scope is enforced at the SQL layer, measured on the parsed source (not from prose).** Exactly five executable string literals carry SQL — `routstr_delist.py:355`, `:361`, `:369`, `:392`, `:406` (raw SQL text at `:355`, `:361`, `:371`, `:394`, `:408`). The set of materialised tables across all of them is exactly `{models}`; the verb inventory is 3 `UPDATE` + 2 `SELECT`. No other payload, and no other literal anywhere in the file, names a second table.
+2. **`upstream_providers` never appears in executable code.** The identifier occurs three times in the whole 829-line file — `routstr_delist.py:35`, `:352`, `:771` — and every one of those lines lies inside a docstring span, so all three are documentation of the guarantee rather than a write path into it. Of 285 executable string literals inspected, 0 name the table. This is the same property the deployed docstring asserts at `routstr_delist.py:770-771` and the CLI help at `:502-504`.
+3. **No shell and no dynamic evaluation.** There are exactly two `subprocess.run` sites — `routstr_delist.py:459` (the best-effort `nak` event publish) and `:808` (the ssh docker exec) — with `shell=True` count 0 and `eval`/`exec` call sites 0. The remote command is therefore never handed to a local shell.
+4. **The remote command is one shell-quoted argv element.** `build_ssh_docker_cmd` (`routstr_delist.py:414-425`) joins `docker exec <quoted container> python3 -c <quoted payload>` into the *single* remote-command argument (`:423-425`). Round-trip proof this pass: the argv is 3 elements and `shlex.split(cmd[2])` reproduces the intended remote argv with a container name containing a space intact.
+5. **The filesystem write surface is one file.** Write-mode `open()` occurs once (`routstr_delist.py:231`, inside `save_state`); the only other filesystem mutations are `os.makedirs` `:229`, `os.fsync` `:234`, `os.replace` `:235` and `os.unlink` `:243`, all in the same function — atomic tmp-write then rename, as documented at `docs:80-83`. The three read-mode opens are `:214`, `:457` and `:476`. No router config, no provider row, no ladder file is ever opened for writing.
+6. **Ladder isolation proven by execution, not by substring.** A delist executed against a stand-in node holding both `models` and `upstream_providers` leaves the ladder artifact byte-identical (340 B before and after), the provider rows identical (`openrouter`, `routstr`, `zai`), the routstr provider still `enabled=1`, all advertised rows disabled, and the operator's pre-disabled row still 0. No executed payload named `upstream_providers`. The same property is asserted independently by the deployed contract suite at `contract:467-493`.
+7. **Relist is the exact inverse and is scoped.** `--relist` restores precisely the captured names (`routstr_delist.py:601`, `:635`) and does not resurrect the operator's pre-disabled row; the ladder is again byte-identical. Without a captured name set the blanket relist is refused before any remote call (`:602-611`: rc 1, `action=relist_refused`, zero round trips, no state file written); `--relist-any` (`:525-527`) is the explicit opt-in and, measured, does re-enable every row including the operator's — i.e. the dangerous direction requires an explicit flag, matching `docs:29-32`.
+8. **Gap — MEDIUM, new this pass: dry-run purity is conditional on firing.** `docs:87-89` and the module's own comment at `routstr_delist.py:700-702` state that a dry run consumes no acceleration baseline. That holds on the firing path, but the quiet path at `routstr_delist.py:651-654` has no `--dry-run` guard, so a dry run there refreshes the stored baseline — measured: a snapshot of 11.0 h becomes 10.0 h — and no `last_dry_run` is recorded (`:704-709` is the firing path only), so the disarm leaves no trace. Measured state afterwards is identical to a real quiet run's. Failure direction is **loss of protection** (a later move that would have fired no longer does), never an unsafe delist. A one-line guard mirroring `:699` is the fix.
+9. **Gap — LOW: `--ssh-target`/`--container` are unvalidated free-form strings** (`routstr_delist.py:536-537`). A mistargeted container can only ever run the same payload, which opens the hardcoded `/app/data/keys.db`, so it cannot reach the router — but it could mutate another sell node's listing.
+10. **Gap — LOW: the db path is duplicated four times** (`routstr_delist.py:370`, `:385`, `:393`, `:407`), so a path change must be made in four places or the payloads silently diverge.
+11. **Gap — LOW: all 8 `save_state` call sites discard the return value** (`routstr_delist.py:752`, `:710`, `:732`, `:654`, `:638`, `:629`, `:622`, `:565`). `save_state` swallows write failures (`:229-245`), so a full disk or a permissions error presents as a successful run whose durable state silently did not move. This has already been observed in the field as a misreported test failure rather than an honest error.
+12. **Gap — LOW: pull and verify are separate round trips with no transaction** (`routstr_delist.py:673` then `:682`, payloads `:369-373` and `:406-410`). A concurrent writer could re-enable a row between them, which the verify would catch as a non-zero count (fail-safe direction) but which makes the pair non-atomic by construction.
+13. **Gap — LOW: the main suite's ladder guards are substring assertions, not a structural check.** `tests:308-309` and `tests:315-316` assert only that the two renderings of the delist payload contain neither `upstream_providers` nor `provider`, and `tests:321` does the same for the pull payload. They pin the constant SQL text rather than the property; the materialised proof that the ladder survives is in the contract suite instead (`contract:467-493`, rows read back through `contract:160`). The residual is that a future refactor emitting a *differently worded* ladder write would pass the main suite's guards while failing the contract case.
+
+**Verdict 1: OK.** The SALE/provider distinction is enforced at the SQL layer, under no shell, with a one-file write surface, and the ladder isolation is now proven by execution against a two-table node plus the deployed `contract:467-493` case. Residuals are one MEDIUM (a dry run can silently consume the baseline on the quiet path) and seven LOW, none of which can disable the provider or reach the ladder.
+
+---
+
+## Finding 2 — Post-delisting confirmation must come from an independent re-fetch — severity: **OK** (requirement MET; residual: 1 MEDIUM, 2 LOW)
+
+**Requirement under test.** After pulling the listing, success must be confirmed by a second, independent read rather than by the mutating round trip's own self-report — stated at `docs:69-75`, motivated by the cold-review finding that the original script trusted the pull's exit code.
+
+1. **The confirming read is genuinely independent and read-only.** `verify_pull_payload()` (`routstr_delist.py:400-411`) issues `SELECT COUNT(*) FROM models WHERE enabled=1` (`:408`); it contains no `UPDATE`, `INSERT`, `DELETE`, `DROP` or `REPLACE`, so the confirmation cannot itself change the state it measures. It is a separate `ssh`/`docker exec` invocation through the backend's own `verify()` method (`routstr_delist.py:790-793`, routed to `_run` at `:795`).
+2. **The gate uses the re-fetched count, never the pull's self-report.** `routstr_delist.py:683` requires `vres.get("ok") is True and vres.get("count") == 0`, and only then sets `res["confirmed"]` and `res["verified_count"]` (`:685-687`). Durable success is gated on that flag: `delisted=True` is written at `:747-752` only after `confirmed` is true, and the previously captured names are merged there (`:744-746`).
+3. **A pull that lies is refuted — measured.** With a node whose pull self-reports `ok` but never actually disables the rows, the run returns rc 1 with `action=delist_failed`, `verify.count` of 3, round-trip sequence `[pull, verify, pull, verify]`, no `delisted` flag and `consecutive_failures == 1`. The in-run retry is bounded by `MAX_PULL_ATTEMPTS = 2` (`routstr_delist.py:75`, loop at `:671-697`), so a lying node cannot spin the 5-minute window.
+4. **Confirmation cannot be satisfied by garbage or by a dead transport.** A verify result carrying no `count` key fails the `count == 0` comparison (`None == 0` is False), producing rc 1 and no durable flag; a verify that cannot reach the host fails the attempt at `routstr_delist.py:689-697` with the round-trip sequence `[pull, pull]`. Both directions fail closed.
+5. **A failed confirmation never sets durable success.** The failure path `routstr_delist.py:719-739` keeps `delisted=False`, records `last_pull_error`, increments the breaker counter, exits 1 (or 3 when it opens the breaker at `:730-739`) and deliberately does not consume the acceleration baseline, so the same trigger re-fires on the next run. This matches `docs:62-68`.
+6. **Residual — MEDIUM, re-measured every pass: the relist direction has no symmetric re-fetch.** The relist branch calls only `relist(...)` (`routstr_delist.py:613-614`) and gates success on the payload's own self-report at `:626`; there is no follow-up read. Measured with a lying relist: rc **0** and `action=relist` while the listing is measurably **not** restored (`models` still all 0), and `pulled_models` has been popped at `:635` — so the scoped recovery path is afterwards refused (`:602-611`) and the only remaining route is `--relist-any`, which also re-enables the operator's pre-disabled row. The asymmetry is a real residual, not a hazard: the failure direction is an operator having to notice a listing that stayed pulled, never an unsafe delist. A `verify` after `:626` mirroring `:682-688` would close it.
+7. **Gap — LOW: the firing dry-run proves nothing remotely.** On that path the local flag is set at `routstr_delist.py:679-681` with no verify call at all, and because only `:685` writes `res["confirmed"]`, the printed result carries no `confirmed` or `verified_count` key; only the intent is recorded (`:705-709`). Correct for a dry run, but a reader of the output must not mistake its `action=delist` for a confirmed delist.
+8. **Gap — LOW: pull and verify share one transport.** Both go through the same backend instance and the same ssh target (`routstr_delist.py:666`, `:682`), so the confirmation is independent of the *write statement* but not of the *host*. A wrong-target node would confirm itself; the residual is bounded by the container/target being single-sourced, and is the same class as Finding 1 item 9.
+
+**Verdict 2: OK — the requirement is met.** Confirmation is an independent, read-only re-fetch of the enabled count (`routstr_delist.py:400-411`, gated at `:683`, durable at `:747-752`), a lying pull and a garbage/dead verify all fail closed with a non-zero exit, and the retry is bounded at two attempts. The MEDIUM residual is the missing symmetric re-fetch on the relist direction, with two LOWs.
+
+---
+
+## Finding 3 — Fail-safe on absent, garbage and stale monitor signals — severity: **OK** (residuals: 5 LOW)
+
+**Requirement under test.** When the trigger signal is missing, unparseable or stale, the tool must do nothing destructive and must fail in the closed direction — never delist on dead data — as stated at `docs:38-44`, `docs:56-60`, `docs:84-86`.
+
+1. **Absence is inert.** No `--preds` at all: rc 0, `action=none`, zero remote round-trips. With a feed present but no stored baseline, the acceleration trigger cannot fire at all (empty-`accel` guard at `routstr_delist.py:107-108`), and the first run reports a quiet result — so a first-run false positive is structurally impossible, as `docs:44` claims.
+2. **Garbage is inert and reported.** An unparseable feed file yields `preds_error: true`, rc 1, `action=none` and zero round-trips (`routstr_delist.py:585`, exit computed at `:660`). Non-dict rows are dropped rather than crashing (`:478-479`), and rows whose fields are the wrong type are excluded by the per-field guards (`:137`, `:152`, `:179`): a feed of string/`None`/bool-typed rows plus bare scalars produced no fire, no crash and zero round-trips this pass. A valid-but-empty array is likewise treated as a feed error rather than as "quiet" (LOW, item 8).
+3. **Staleness fails closed, and the boundary is inclusive.** `feed_is_stale` (`routstr_delist.py:485-496`) returns `not (0 <= age <= max_age_s)` at `:494` with `STALENESS_S = 1800` (`:78`), and returns True on `OSError` (`:495`) so an unreadable/missing feed is stale by construction. Measured with the injected clock: age 0 and age exactly 1800 s are fresh; 1800.001 s, 3600 s, a future mtime and a missing file are all stale.
+4. **A stale feed can neither fire nor refresh the baseline — measured end to end.** With a stored baseline of 100 h and a stale feed advertising a 99-hour move plus variance 0.9 (both would fire if honoured), the run returned rc 1 with `preds_stale: true`, `action=none` and zero round-trips, and the stored baseline was byte-identical afterwards (`routstr_delist.py:589-592` empties the feed before it reaches `update_state` at `:652-653`). The control with the *same* numbers and a fresh mtime does delist — so the guard, not an absent signal, is what stopped it.
+5. **The manual override is deliberately ungated, and does not pollute state.** A stale feed plus `--manual` still delists, with `preds_stale: true` reported alongside the action, and the dead feed still does not refresh the baseline. This matches `docs:38-44` (the override is the operator's explicit escape hatch); the override marker/flag path is `routstr_delist.py:580`.
+6. **The action window fails closed.** Against the real production backend, an already-exhausted deadline returns `ok: False, error: "action budget exhausted"` **without spawning a subprocess** (`routstr_delist.py:800-806`), a 5 s remaining budget clamps the ssh timeout to 5 s, and a large budget is capped at `SSH_TIMEOUT_S` (`:806`). The SLA arithmetic holds: `POLL_CADENCE_S + ACTION_BUDGET_S == 300` with a worst case of 2 × `SSH_TIMEOUT_S` for pull+verify inside the 60 s slice, driven by `MAX_PULL_ATTEMPTS = 2` (`routstr_delist.py:75-78`).
+7. **The circuit breaker is real, durable and fail-closed.** Three consecutive failed runs return rc `[1, 1, 3]`, write `blocked: true` with `consecutive_failures == BREAKER_THRESHOLD` durably, and produce exactly 6 pulls (3 runs × attempt + bounded retry) with the verify never reached. While open, every remote action is refused before any round trip — delist and relist alike — with rc 3 (`routstr_delist.py:569-578`); `--unblock` clears it (`:561-567`); dry-run runs never count toward it (`:699-710` and the failure path at `:719-739`); and a *failed relist* does not advance the counter (value held at 0, `blocked` False, keys retained greppable by design at `:750-751`), so relist failures cannot lock the operator out of the delist path.
+8. **Residual — LOW: an empty but valid feed is reported as an error.** `preds_error` is computed at `routstr_delist.py:585` as "an explicitly requested feed that yields nothing", which makes `[]` indistinguishable from corruption in the output (`:655-660`). Failing closed is the safe direction, but the diagnostic is imprecise.
+9. **Residual — LOW: `--preds-key` scoping is opt-in, and a non-matching key is silent.** `--preds-key` (`routstr_delist.py:594-597`) narrows the feed to one key, but only when supplied, and `evaluate_triggers` exposes no key parameter to forward it (`:272` — measured signature `(preds_now, prev_state)`), so an unscoped run lets a foreign provider's variance spike fire the routstr delist. Conversely a `--preds-key` that matches no row empties the feed while `preds_error` is computed at `:585` from the **unfiltered** list, so the run reports rc 0, `preds_error: false`, `preds_stale: false` and zero round-trips — byte-for-byte the output of a healthy quiet run. A typo therefore disables the trigger permanently and invisibly. Both directions are loss-of-protection, never an unsafe delist.
+10. **Residual — LOW: a scoped run narrows the stored baseline to that key** (`routstr_delist.py:594-597` feeding `:652-653`), so switching `--preds-key` between runs discards the other keys' snapshots and can reset the acceleration comparison.
+11. **Residual — LOW: the pure helpers are not type-hardened.** `evaluate_triggers([None, "x", 1], None)` raises `AttributeError` when called directly; only the CLI path is protected, by `_read_preds` dropping non-dicts at `routstr_delist.py:478-479`. No user-facing impact today, but the helpers are exported and the guard is one layer up.
+
+**Verdict 3: OK.** Absence and garbage are inert and reported, staleness is guarded in the fail-safe direction by `routstr_delist.py:485-496` with the exact-boundary case pinned and a fresh-input control proving the guard is what fires, the override is intentionally ungated without polluting state, and the budget and breaker both fail closed (no subprocess on an exhausted budget; every remote action refused while the breaker is open). Residuals are five LOW, all of the loss-of-protection rather than unsafe-action kind.
