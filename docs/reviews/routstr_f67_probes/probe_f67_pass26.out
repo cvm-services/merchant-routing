@@ -1,0 +1,107 @@
+usage: routstr_delist.py [-h] [--state STATE] [--override OVERRIDE]
+                         [--preds PREDS] [--preds-key PREDS_KEY]
+                         [--move-hours MOVE_HOURS] [--variance VARIANCE]
+                         [--manual] [--delist] [--relist] [--relist-any]
+                         [--unblock] [--status] [--dry-run]
+                         [--ssh-target SSH_TARGET] [--container CONTAINER]
+                         [--nsec NSEC]
+routstr_delist.py: error: unrecognized arguments: --bogus
+
+==============================================================================
+0. ARTIFACT IDENTITY AND PATH STATUS
+==============================================================================
+[PASS] contract.md MISSING at bot path (reported HIGH) :: /home/c03rad0r/.hermes/bot/docs/routstr_delist_contract.md exists=False
+    bot docs dir contents: ['reviews', 'routstr-delist.md']
+    deployed script   829 L  md5=2ea724ef08d857cd7b88a957300e70b4  repo_identical=True
+    deployed suite    752 L  md5=031851b356f0de4089512f02f13f05cc  repo_identical=True
+    doc               197 L  md5=e385af98b9c142eec736672d4dcca290  repo_identical=True
+
+==============================================================================
+1. AST INVENTORY
+==============================================================================
+    while          : [671]
+    for            : [112, 146, 204, 297]
+    comprehensions : [110, 308, 312, 479, 597, 694, 746]
+    subprocess.run : [459, 808]  with timeout= : [459, 808]  shell=True : []
+[PASS] exactly ONE while loop in the deployed script :: [671]
+[PASS] every subprocess.run is timeout-bounded :: run=[459, 808] timeout=[459, 808]
+[PASS] no shell=True anywhere :: []
+[PASS] no unbounded 'while True'
+[PASS] while bound is 'attempts < MAX_PULL_ATTEMPTS' :: attempts < MAX_PULL_ATTEMPTS
+[PASS] loop body increments FIRST (attempts += 1 is body[0]) :: attempts += 1
+    save_state call sites: [565, 622, 629, 638, 654, 710, 732, 752]
+    ... of which bare (return ignored): [565, 622, 629, 638, 654, 710, 732, 752]
+[PASS] save_state return ignored at every site :: 8/8
+[PASS] BREAKER_THRESHOLD defined
+    BREAKER_THRESHOLD = 3 (line 77)
+[PASS] BREAKER_THRESHOLD == 3
+    literal returns   : {171: False, 237: True, 239: False, 355: 'UPDATE models SET enabled=0 WHERE enabled=1;', 361: 'UPDATE models SET enabled=1;', 405: "import sqlite3,json;db=sqlite3.connect('/app/data/keys.db');n=db.execute('SELECT COUNT(*) FROM models WHERE enabled=1').fetchone()[0];print(json.dumps({'ok':True,'count':n}))", 438: None, 455: None, 496: True, 557: 0, 578: 3, 611: 1, 632: 1, 644: 0, 764: 0}
+[PASS] exit space includes 3 (blocked refusal + trip) :: lines [578]
+    nsec identifier sites: [458, 460]
+[PASS] nsec identifier appears at exactly 2 source sites :: [458, 460]
+
+==============================================================================
+2. FINDING 6 — CIRCUIT BREAKER (in-process real CLI)
+==============================================================================
+    5 failing runs -> rcs [1, 1, 3, 3, 3]; pulls/run [2, 2, 2, 0, 0]; kinds ['pull', 'pull', 'pull', 'pull', 'pull', 'pull']
+[PASS] trip sequence is [1,1,3,3,3] :: [1, 1, 3, 3, 3]
+[PASS] per-run pull attempts [2,2,2,0,0] (attempt 4 never runs) :: [2, 2, 2, 0, 0]
+[PASS] no verify round-trip ever reached before/after trip :: ['pull', 'pull', 'pull', 'pull', 'pull', 'pull']
+[PASS] durable BLOCKED marker on disk :: {'blocked': True, 'consecutive_failures': 3, 'delisted': False, 'last_pull_error': {'action': 'delist', 'res': {'action': 'pull', 'ok': False, 'rc': 255, 'stderr': '', 'stdout': ''}, 'ts': 1790587256.024402}, 'ts': 1790587256.024402}
+[PASS] blocked refuses --manual (rc 3, 0 remote calls) :: rc=3 action=blocked spawns=0
+[PASS] blocked refuses --relist (rc 3, 0 remote calls) :: rc=3 action=blocked spawns=0
+[PASS] blocked refuses --relist --relist-any (rc 3, 0 remote calls) :: rc=3 action=blocked spawns=0
+[PASS] blocked refuses --manual --dry-run (rc 3, 0 remote calls) :: rc=3 action=blocked spawns=0
+[PASS] blocked refuses --delist (rc 3, 0 remote calls) :: rc=3 action=blocked spawns=0
+[PASS] --status rc 0, reports blocked/consecutive_failures, spawns nothing, non-clearing :: rc=0 out={'blocked': True, 'consecutive_failures': 3, 'delisted': False, 'last_reason': None, 'pulled_models': [], 'snapshot_windows': 0, 'ts': 1790587256.024402}
+[PASS] --unblock --manual heals: rc 0 delist, counter 0, blocked false :: rc=0 {'blocked': False, 'consecutive_failures': 0, 'delisted': True, 'last_pull_error': {'action': 'delist', 'res': {'action': 'pull', 'ok': False, 'rc': 255, 'stderr': '', 'stdout': ''}, 'ts': 1790587256.024402}, 'last_reason': 'manual override', 'pulled_models': ['gpt-4o', 'claude-3-5-sonnet'], 'ts': 1790587256.066094}
+    exit space probes: quiet=0 dry=0 bogus=2 (blocked=3 tripped, failure=1)
+[PASS] exit space {0,1,3} plus argparse 2 :: see above
+
+==============================================================================
+3. FINDING 6 — RESIDUALS (re-probed)
+==============================================================================
+[PASS] (a) counter holds 2 across quiet + preds_error runs, then one new failure trips :: after2=2 quiet=2 err=2 next_rc=3
+[PASS] (b) fail-open: prints rc 3/blocked true while disk keeps fails 2/blocked false :: rc=3 out_blocked=True disk={'consecutive_failures': 2, 'blocked': False, 'ts': 1}
+[PASS] (c) failed relist never ticks the counter; successful relist resets it :: failed: rc=1 cnt=2 | ok: rc=0 cnt=0
+[PASS] (d) blocked refuses --dry-run preview; --unblock --dry-run clears for real :: preview rc=3 spawns=0 | after unblock-dry: keys=['delisted', 'ts']
+[PASS] (e) bool counter hole: seeded true + one failure -> disk counter 2 :: 2
+[PASS] remote round-trips timeout-clamped to the remaining 60 s action budget :: timeouts=[30, 30] budget=60
+
+==============================================================================
+4. FINDING 7a — SECRET HYGIENE
+==============================================================================
+[PASS] exactly one nak publish; --env-sec present, --sec absent :: ['/home/c03rad0r/.local/bin/nak', 'event', '--kind', '30078', '--tag', 'd:routstr-delist', '--tag', 't:routstr', '--content', '{"delisted":true,"ts":1790587256.3133433,"tag":"routstr-delist"}', '--env-sec', 'wss://relay.primal.net', 'wss://nos.lol', 'wss://relay.damus.io']
+[PASS] secret present ONLY in the child env (NOSTR_SECRET_KEY) :: env_keys=['HERMES_REDACT_SECRETS', 'NOSTR_SECRET_KEY']
+[PASS] secret absent from stdout and the durable state file
+[PASS] kind 30078 + d:routstr-delist in the publish argv
+[PASS] no credential-bearing key in state (allowlist) :: ['blocked', 'consecutive_failures', 'delisted', 'last_reason', 'pulled_models', 'ts']
+[PASS] 7a residual: a RAISING nak is swallowed — run still rc 0, no signal :: rc=0
+
+==============================================================================
+5. FINDING 7b/7c — LOOPS + DRY-RUN PURITY
+==============================================================================
+[PASS] 7c dry run spawns ZERO subprocesses (not even ssh/nak) :: rc=0 spawns=[]
+[PASS] 7c fresh-state dry delist writes exactly [last_dry_run, ts] :: ['last_dry_run', 'ts']
+[PASS] 7c seeded delisted/pulled_models/fails/snapshot all survive a dry relist :: ['consecutive_failures', 'delisted', 'last_dry_run', 'pulled_models', 'snapshot', 'ts']
+[PASS] 7c dry run against a DEAD node still rc 0 and spawns nothing (dry stub :797-799 precedes :808) :: rc=0 spawns=0 keys=['last_dry_run', 'ts']
+[PASS] 7c dry-failure branch (:717) exits 1, writes only last_dry_run/ts (no breaker keys, no last_pull_error) :: rc=1 keys=['last_dry_run', 'ts']
+[PASS] 7e state file written with default umask, credential-free :: mode=0o664
+
+==============================================================================
+IN-PROCESS: 42/42 checks passed
+
+==============================================================================
+6. FINDING 6 — REAL DEPLOYED CLI AS A SUBPROCESS (ssh PATH-shimmed)
+==============================================================================
+    per-run ssh invocations [2, 2, 2, 0, 0]; rcs [1, 1, 3, 3, 3]
+[PASS] REAL CLI trip rcs [1,1,3,3,3] :: [1, 1, 3, 3, 3]
+[PASS] REAL CLI per-run ssh deltas [2,2,2,0,0] (attempt 4 never runs) :: [2, 2, 2, 0, 0]
+[PASS] REAL CLI no verify round-trip before the trip :: log scanned
+[PASS] REAL CLI durable BLOCKED marker :: {'blocked': True, 'consecutive_failures': 3, 'delisted': False, 'last_pull_error': {'action': 'delist', 'res': {'action': 'pull', 'ok': False, 'rc': 255, 'stderr': '', 'stdout': ''}, 'ts': 1790587256.6546226}, 'ts': 1790587256.6546226}
+[PASS] REAL CLI --status read-only, rc 0, surfaces breaker :: {'blocked': True, 'consecutive_failures': 3, 'delisted': False, 'last_reason': None, 'pulled_models': [], 'snapshot_windows': 0, 'ts': 1790587256.6546226}
+
+==============================================================================
+TOTAL: 47/47 checks passed
+tmp tree: /home/c03rad0r/.cache/f67p26-gs30skgo
+artifacts mutated: NONE (all state under the tmp tree)
