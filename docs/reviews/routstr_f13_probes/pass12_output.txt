@@ -1,0 +1,59 @@
+== GROUP A — Finding 1: safety (SALE vs provider, ladder untouched) ==
+PASS A0a deployed script == repo src (md5) :: 2ea724ef08d857cd7b88a957300e70b4 lines=830
+PASS A0b deployed tests == repo contract suite (md5) :: 031851b356f0de4089512f02f13f05cc lines=753
+PASS A1a SQL table inventory is exactly 5 models-table references :: [(355, 'models'), (361, 'models'), (369, 'models'), (392, 'models'), (406, 'models')]
+PASS A1c zero SQL reference names any table other than models :: tables=['models']
+PASS A1b the 5 SQL texts sit at raw source lines 355/361/371/394/408 :: {355: [355], 361: [361], 371: [371], 394: [394], 408: [408]}
+PASS A2 upstream_providers: 3 occurrences, all inside docstrings, 0 in code :: occurrence_lines=[35, 352, 771] docstring_lines=[35, 352, 771]
+PASS A3a exactly 2 subprocess.run sites, none with shell=True :: subprocess=[459, 808] shell_true=[]
+PASS A3b zero eval/exec call sites :: eval_exec=[]
+PASS A3c os.* mutation surface limited to save_state tmp swap :: os_calls=[(235, 'replace'), (243, 'unlink')]
+PASS A4a manual delist confirmed rc0 :: rc=0 action=delist confirmed=True
+PASS A4b ladder artifact byte-identical across the delist :: 340B
+PASS A4c upstream_providers rows identical across the delist :: [('openrouter', 1, 20.0), ('routstr', 1, 10.0), ('zai', 1, 30.0)]
+PASS A4d routstr provider still an enabled ladder candidate
+PASS A4e every advertised model disabled; pre-disabled row stayed disabled :: {'gpt-4o': 0, 'claude-3-5-sonnet': 0, 'llama-3.1-405b': 0, 'operator-disabled-model': 0}
+PASS A4f no executed payload ever named upstream_providers :: kinds=['pull', 'verify']
+PASS A5a scoped relist restores exactly the captured names :: rc=0 restored=3
+PASS A5b operator-disabled row never re-enabled by the relist :: {'gpt-4o': 1, 'claude-3-5-sonnet': 1, 'llama-3.1-405b': 1, 'operator-disabled-model': 0}
+PASS A5c ladder still byte-identical after the relist
+PASS A6a --relist without captured names refuses, rc1, zero remote calls :: rc=1 action=relist_refused calls=[]
+PASS A6b refusal wrote no delisted flag
+PASS A7a ssh argv is 3 elements with one shlex-quoted remote string :: len=3
+PASS A7b remote string re-parses to the intended argv (container with space) :: ['docker', 'exec', 'routstr public', 'python3', '-c', "print('x')"]
+PASS A8a dry-run fires no remote round-trip :: rc=0 calls=[]
+PASS A8b dry-run introduced no durable delisted flag :: state_keys=['last_dry_run', 'ts']
+== GROUP B — Finding 2: post-delisting confirmation via re-fetch ==
+PASS B1a verify payload contains no mutating SQL verb :: import sqlite3,json;db=sqlite3.connect('/app/data/keys.db');n=db.execute('SELECT
+PASS B1b verify payload is exactly the COUNT re-fetch
+PASS B2a lying pull -> rc1 delist_failed, verify count refutes it :: rc=1 action=delist_failed verify={'count': 3, 'error': None, 'ok': True, 'rc': 0}
+PASS B2b bounded in-run retry: kinds == pull,verify,pull,verify :: ['pull', 'verify', 'pull', 'verify']
+PASS B2c failed delist sets no delisted flag and ticks the breaker :: delisted=False fails=1
+PASS B3a happy path rc0 confirmed=True verified_count=0 :: rc=0 confirmed=True verified_count=0
+PASS B3b exactly one pull + one verify :: ['pull', 'verify']
+PASS B3c durable delisted=true with the captured advertised names :: pulled_models=['gpt-4o', 'claude-3-5-sonnet', 'llama-3.1-405b']
+PASS B4a verify count>0 refutes an ok pull -> rc1, no flag, breaker tick :: rc=1 delisted=False fails=1
+PASS B5a verify transport failure -> attempt failure, rc1, no flag :: rc=1 kinds=['pull', 'verify', 'pull', 'verify']
+PASS B6a relist success is gated only on the round-trip self-report :: rc=0 kinds=['relist'] (no verify follows)
+PASS B7 confirmed is gated on the re-fetch ok+count==0 in source
+== GROUP C — Finding 3: fail-safe on absent, garbage, stale ==
+PASS C1 staleness: missing/aged/future => stale; fresh/boundary => not :: {'missing': True, 'aged_3600': True, 'future_mtime': True, 'fresh': False, 'boundary_exact_1800': False, 'over_boundary_1800.5': True, 'zero_age': False}
+PASS C2a stale feed: no fire, preds_stale true, rc1, zero remote calls :: rc=1 action=none preds_stale=True calls=[]
+PASS C2b stale feed left the stored baseline untouched :: snapshot={'zai\x1f1h': 10.0}
+PASS C2c control: identical numbers with a fresh mtime DO delist :: rc=0 action=delist
+PASS C3a garbage feed: rc1, preds_error true, action none, no fire :: rc=1 preds_error=True
+PASS C3b garbage feed never wiped the stored baseline :: snapshot={'zai\x1f1h': 10.0}
+PASS C4 garbage+aged reports preds_error=true and preds_stale=false :: rc=1 preds_error=True preds_stale=False
+PASS C5a malformed uncertainty/hours types never fire :: rc=0 action=none
+PASS C5b evaluate_triggers on the same malformed feed fires nothing
+PASS C5c non-dict feed entries dropped, no crash, action none :: rc=0 action=none
+PASS C5d cosmetic: _hours accepts bool while the variance guard excludes it
+PASS C6 manual override delists despite a stale feed (observed, not obeyed) :: rc=0 preds_stale=True kinds=['pull', 'verify']
+PASS C7a evaluate_triggers applies no implicit key filter
+PASS C7b openrouter-only variance spike fires the routstr delist, unscoped :: rc=0 action=delist
+PASS C7c --preds-key zai makes the same feed quiet :: rc=0 action=none
+PASS C8 exhausted action budget -> ok=False, zero subprocess spawn :: {'ok': False, 'action': 'pull', 'error': 'action budget exhausted'} spawned=0
+== GROUP D — citation audit for every file:line asserted below ==
+PASS D1 all 65 cited file:line pairs verified against source :: mismatches=[]
+
+== probe_f13_pass12: 53/53 PASS ==
