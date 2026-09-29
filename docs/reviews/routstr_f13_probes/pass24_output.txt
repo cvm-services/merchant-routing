@@ -1,0 +1,209 @@
+A:F1-load-bearing-distinction PASS src:9 <- 'disabling the routstr provider'
+A:F1-upstream-docstring-a PASS src:35 <- 'upstream_providers'
+A:F1-upstream-docstring-b PASS src:352 <- 'upstream_providers'
+A:F1-upstream-docstring-c PASS src:771 <- 'upstream_providers'
+A:F1-pull-sql PASS src:355 <- 'UPDATE models SET enabled=0 WHERE enabled=1;'
+A:F1-blanket-sql PASS src:361 <- 'UPDATE models SET enabled=1;'
+A:F1-pull-select-names PASS src:371 <- 'SELECT name FROM models WHERE enabled=1'
+A:F1-relist-connect PASS src:393 <- "sqlite3.connect('/app/data/keys.db')"
+A:F1-relist-scoped-update PASS src:394 <- 'UPDATE models SET enabled=1 WHERE name IN'
+A:F1-verify-count PASS src:408 <- 'SELECT COUNT(*) FROM models WHERE enabled=1'
+A:F1-build-cmd-def PASS src:414 <- 'def build_ssh_docker_cmd'
+A:F1-quote-container PASS src:423 <- 'shlex.quote(container)'
+A:F1-quote-payload PASS src:424 <- 'shlex.quote(payload)'
+A:F1-cmd-return PASS src:425 <- 'return ["ssh", ssh_target, remote]'
+A:F1-nak-subprocess PASS src:459 <- 'subprocess.run(argv'
+A:F1-ssh-subprocess PASS src:808 <- 'subprocess.run(cmd'
+A:F1-relist-refuse-gate PASS src:600 <- 'if args.relist:'
+A:F1-relist-refuse-action PASS src:606 <- '"action": "relist_refused"'
+A:F1-relist-refuse-rc PASS src:611 <- 'return 1'
+A:F1-ssh-target-arg PASS src:536 <- '--ssh-target'
+A:F1-container-arg PASS src:537 <- '--container'
+A:F1-keysdb-a PASS src:370 <- '/app/data/keys.db'
+A:F1-keysdb-b PASS src:385 <- '/app/data/keys.db'
+A:F1-keysdb-c PASS src:393 <- '/app/data/keys.db'
+A:F1-keysdb-d PASS src:407 <- '/app/data/keys.db'
+A:F1-save-unblock PASS src:565 <- 'save_state(args.state, state)'
+A:F1-save-relist-dry PASS src:622 <- 'save_state(args.state, state)'
+A:F1-save-relist-fail PASS src:629 <- 'save_state(args.state, state)'
+A:F1-save-relist-ok PASS src:638 <- 'save_state(args.state, state)'
+A:F1-save-quiet PASS src:654 <- 'save_state(args.state, state)'
+A:F1-save-delist-dry PASS src:710 <- 'save_state(args.state, state)'
+A:F1-save-delist-fail PASS src:732 <- 'save_state(args.state, state)'
+A:F1-save-delist-ok PASS src:752 <- 'save_state(args.state, state)'
+A:F1-ladder-artifact-test PASS contract:108 <- 'self.ladder_artifact = tmpdir'
+A:F1-provider-table-test PASS contract:129 <- 'CREATE TABLE upstream_providers'
+A:F1-provider-rows-test PASS contract:160 <- 'FROM upstream_providers'
+A:F1-semantic-guard-class PASS contract:468 <- 'class TestSemanticGuardLadderUntouched'
+A:F1-ladder-byte-identity PASS contract:480 <- 'ladder_bytes() == ladder_before'
+A:F1-no-payload-names-table PASS contract:483 <- '"upstream_providers" not in payload'
+A:F1-relist-ladder-identity PASS contract:504 <- 'ladder_bytes() == ladder_before'
+A:F1-pull-sql-test PASS tests:303 <- 'def test_pull_sql_touches_only_models_listing'
+A:F1-relist-sql-test PASS tests:311 <- 'def test_relist_sql_touches_only_models_listing'
+A:F1-verify-payload-test PASS tests:336 <- 'def test_verify_payload_scoped_to_models_listing'
+A:F1-ssh-single-arg-test PASS tests:345 <- 'def test_ssh_cmd_is_single_shlex_safe_remote_command'
+A:F2-verify-payload-def PASS src:400 <- 'def verify_pull_payload'
+A:F2-verify-gate PASS src:683 <- 'vres.get("ok") is True and vres.get("count") == 0'
+A:F2-confirmed-set PASS src:687 <- 'confirmed = True'
+A:F2-verify-call PASS src:682 <- 'vres = backend.verify(deadline=deadline)'
+A:F2-refuted-pull PASS src:692 <- 'res["ok"] = False'
+A:F2-retry PASS src:671 <- 'while attempts < MAX_PULL_ATTEMPTS:'
+A:F2-failures PASS src:724 <- 'fails += 1'
+A:F2-failure-branch PASS src:719 <- 'if not confirmed:'
+A:F2-relist-report-gate PASS src:626 <- 'if not res.get("ok"):'
+A:F2-relist-pop PASS src:635 <- 'state.pop("pulled_models", None)'
+A:F2-ssh-run-def PASS src:795 <- 'def _run(self, payload'
+A:F2-lastline-json PASS src:814 <- 'json.loads(out.splitlines()[-1])'
+A:F2-ok-gate PASS src:822 <- 'proc.returncode == 0 and data.get("ok") is True'
+A:F2-verify-gates-test PASS tests:567 <- 'def test_verify_gates_success'
+A:F2-verify-failure-test PASS tests:603 <- 'def test_verify_failure_is_attempt_failure'
+A:F2-unverified-pull-test PASS contract:346 <- 'def test_unverified_pull_is_a_failed_delist'
+A:F2-garbage-stdout-test PASS tests:1116 <- 'def test_pull_garbage_stdout_is_failure'
+A:F2-nonzero-rc-test PASS tests:1123 <- 'def test_pull_nonzero_rc_is_failure_even_with_ok_payload'
+A:F2-exception-test PASS tests:1146 <- 'def test_exception_is_failure_not_crash'
+A:F2-doc-refetch PASS docs:69 <- 'Re-fetch confirmation'
+A:F2-doc-count-zero PASS docs:71 <- 'count == 0'
+A:F2-doc-dryrun-intent PASS docs:87 <- 'Dry-run is intent-only'
+A:F3-preds-error PASS src:585 <- 'preds_error = bool(args.preds) and not raw_preds'
+A:F3-stale-guard PASS src:589 <- 'preds_stale = bool(args.preds) and bool(raw_preds)'
+A:F3-stale-zeroes PASS src:591 <- 'if preds_stale:'
+A:F3-stale-zeroes2 PASS src:592 <- 'raw_preds = []'
+A:F3-preds-key PASS src:594 <- 'if args.preds_key:'
+A:F3-preds-key-filter PASS src:597 <- 'args.preds_key'
+A:F3-variance-no-key PASS src:303 <- 'variance_jumped(preds_now, threshold=variance_threshold)'
+A:F3-bool-exclusion PASS src:152 <- 'isinstance(unc, bool)'
+A:F3-hours-guard-a PASS src:193 <- 'def _hours'
+A:F3-hours-guard-b PASS src:196 <- 'isinstance(h, (int, float))'
+A:F3-drop-nondict PASS src:479 <- 'isinstance(d, dict)'
+A:F3-read-return-empty PASS src:482 <- 'return []'
+A:F3-feed-is-stale PASS src:485 <- 'def feed_is_stale'
+A:F3-age-expr PASS src:494 <- 'not (0 <= age <= max_age_s)'
+A:F3-oserror-failclosed PASS src:495 <- 'except OSError:'
+A:F3-oserror-true PASS src:496 <- 'return True'
+A:F3-staleness-const PASS src:78 <- 'STALENESS_S = 1800'
+A:F3-baseline-guard-a PASS src:261 <- 'if preds:'
+A:F3-baseline-guard-b PASS src:262 <- 'new["snapshot"]'
+A:F3-manual-not-gated PASS src:580 <- 'override = args.manual or manual_override(args.override)'
+A:F3-quiet-branch PASS src:651 <- 'if not fire:'
+A:F3-quiet-save PASS src:654 <- 'save_state(args.state, state)'
+A:F3-quiet-preds-error-out PASS src:656 <- '"preds_error": preds_error,'
+A:F3-quiet-preds-stale-out PASS src:657 <- '"preds_stale": preds_stale,'
+A:F3-quiet-rc PASS src:660 <- 'return 1 if (preds_error or preds_stale) else 0'
+A:F3-dry-last-run PASS src:705 <- '"last_dry_run"'
+A:F3-fire-flag PASS src:649 <- 'fire = args.delist or dec["fire"]'
+A:F3-first-run-test PASS tests:176 <- 'def test_first_run_never_fires_on_acceleration'
+A:F3-nonnumeric-unc-test PASS tests:146 <- 'def test_non_numeric_uncertainty_ignored_not_crash'
+A:F3-baseline-preserve-test PASS tests:243 <- 'def test_update_state_empty_preds_preserves_baseline'
+A:F3-unreadable-feed-test PASS tests:547 <- 'def test_unreadable_preds_feed_is_error_not_quiet'
+A:F3-preds-key-test PASS tests:776 <- 'def test_preds_key_scopes_triggers'
+A:F3-stale-never-triggers PASS tests:937 <- 'def test_stale_feed_never_triggers'
+A:F3-boundary-test PASS tests:968 <- 'def test_staleness_threshold_boundary'
+A:F3-stale-override-test PASS tests:980 <- 'def test_stale_feed_exit_zero_when_override_fires'
+A:F3-baseline-not-consumed PASS tests:995 <- 'def test_stale_feed_baseline_not_consumed'
+A:F3-first-run-contract PASS contract:308 <- 'def test_first_run_without_baseline_is_quiet'
+A:F3-doc-freshness PASS docs:56 <- 'Freshness guard'
+A:F3-doc-manual-not-gated PASS docs:60 <- 'never gated on freshness'
+A:F3-doc-kind30078 PASS docs:124 <- 'kind-30078'
+A:F3-doc-no-blanket PASS docs:29 <- 'No blanket relist'
+B:upstream-mentions-exactly-3 PASS [35, 352, 771]
+B:pull-sql-models PASS
+B:pull-sql-disables PASS
+B:blanket-sql-models-only PASS
+B:relist-payload-parameterized PASS
+B:relist-payload-no-interp PASS
+B:verify-read-only PASS
+B:no-payload-names-upstream PASS
+B:pull-payload-one-update PASS
+B:pull-payload-select-names PASS
+B:relist-scoped-one-update PASS
+B:relist-blanket-one-update PASS
+B:no-insert-anywhere PASS
+B:no-delete-anywhere PASS
+B:no-drop-anywhere PASS
+B:no-alter-anywhere PASS
+B:no-replace-anywhere PASS
+B:three-distinct-sql-producers PASS
+B:subprocess-run-sites PASS [459, 808]
+B:no-shell-true PASS
+B:ssh-argv-len3 PASS
+B:remote-roundtrip PASS
+B:hostile-container-single-token PASS
+B:semantic-pull-captures-names PASS {'ok': True, 'pulled': ['gpt-4o', 'claude-3', 'llama']}
+B:semantic-pull-disabled-all PASS
+B:semantic-verify-count0 PASS {'ok': True, 'count': 0}
+B:semantic-relist-restores3 PASS {'ok': True, 'restored': 3}
+B:semantic-operator-row-stays-off PASS
+B:semantic-providers-unchanged PASS
+B:semantic-ladder-bytes-identical PASS
+B:blanket-relist-refused PASS rc=1 relist_refused
+B:blanket-relist-no-remote PASS []
+C:verify-select-only PASS
+C:happy-rc0 PASS 0
+C:happy-action-delist PASS delist
+C:happy-confirmed PASS
+C:happy-verified-count0 PASS
+C:happy-kinds PASS ['pull', 'verify']
+C:happy-durable-delisted PASS
+C:lying-pull-rc1 PASS 1
+C:lying-pull-action PASS delist_failed
+C:lying-pull-kinds PASS ['pull', 'verify', 'pull', 'verify']
+C:lying-pull-no-flag PASS
+C:relist-no-verify-roundtrip PASS ['relist']
+C:relist-gated-on-selfreport PASS
+C:relist-clears-flag PASS
+C:relist-pops-names PASS
+C:run-parses-count PASS
+C:run-garbage-fails PASS
+C:run-nonzero-rc-fails PASS
+C:run-missing-ok-key-fails PASS
+C:dryrun-rc0-action PASS
+C:dryrun-no-confirmed-key PASS ['action', 'fire', 'ok', 'preds_error', 'preds_stale', 'pulled', 'reasons']
+D:stale-fresh-false PASS
+D:stale-exact-boundary-false PASS
+D:stale-1801-true PASS
+D:stale-future-mtime-true PASS
+D:stale-missing-path-true PASS
+D:absence-quiet-rc0 PASS rc=0 none
+D:absence-no-remote PASS
+D:absence-no-preds-error PASS
+D:garbage-rc1 PASS 1
+D:garbage-preds-error PASS
+D:garbage-action-none PASS
+D:garbage-baseline-intact PASS
+D:stale-rc1 PASS 1
+D:stale-flag PASS
+D:stale-action-none PASS
+D:stale-no-remote PASS
+D:stale-baseline-intact PASS
+D:manual-not-gated-rc0 PASS 0
+D:manual-not-gated-delist PASS
+D:manual-stale-observed PASS
+D:unscoped-default-fires PASS delist
+D:scoped-filter-quiets PASS none
+D:quiet-dryrun-rc0 PASS
+D:quiet-dryrun-refreshes-baseline PASS {'zai\x1f1h': 11.0}
+D:quiet-dryrun-no-last-run PASS
+D:save-return-ignored-8-sites PASS [565, 622, 629, 638, 654, 710, 732, 752]
+D:keysdb-hardcoded-4 PASS
+D:ssh-target-unvalidated PASS
+E:deliverable-exists PASS
+E:exactly-3-findings PASS ['## Finding 1 — Safety: SALE-delisting never disables the routstr provider or touches the T470 ladder', '## Finding 2 — Confirmation: delist success is gated on an independent read-only re-fetch', '## Finding 3 — Fail-safe: absent, garbage, and stale monitor feed']
+E:finding1-severity-tag PASS severity: **OK** (gaps: **LOW** ×3)
+E:finding1-low-count-matches-declared PASS declared 3 actual 3
+E:finding1-medium-count-matches-declared PASS declared 0 actual 0
+E:finding2-severity-tag PASS severity: **OK** — requirement MET; residual **MEDIUM** ×1, **LOW** ×2
+E:finding2-low-count-matches-declared PASS declared 2 actual 2
+E:finding2-medium-count-matches-declared PASS declared 1 actual 1
+E:finding3-severity-tag PASS severity: **OK** — residual **MEDIUM** ×1, **LOW** ×4
+E:finding3-low-count-matches-declared PASS declared 4 actual 4
+E:finding3-medium-count-matches-declared PASS declared 1 actual 1
+E:bot-parity-src PASS
+E:bot-parity-tests PASS
+E:bot-parity-docs PASS
+E:bot-deliv-parity PASS
+E:contract-path-missing-HIGH PASS
+E:ordinal-preamble PASS # Findings 1–3 Review: routstr_delist — twenty-fourth independent offload pass
+E:preamble-contract-HIGH PASS
+E:no-appended-section PASS
+TALLY 207 checks: 207 PASS, 0 FAIL
+TRANSCRIPT_SHA256 89c3f2552686ba39b93bf5bb0c1cb51649c92b220f0b57a2dcb796b272d2708d

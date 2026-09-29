@@ -1,4 +1,4 @@
-# Findings 1–3 Review: routstr_delist — twenty-third independent offload pass
+# Findings 1–3 Review: routstr_delist — twenty-fourth independent offload pass
 
 Scope (per the original task): finding 1 safety (delisting the routstr SALE must
 never disable the routstr provider or touch the T470 flat-router ladder),
@@ -21,23 +21,25 @@ of the three findings — it is not a defect in the script or its tests.
 
 **Duplicate-dispatch disclosure.** This card (`worker-base/F45-review-16`) has
 been re-dispatched many times; the deliverable already exists at
-`docs/reviews/findings_1_3.md` (creating commit `11e40f9`; 41 commits touch the
+`docs/reviews/findings_1_3.md` (creating commit `11e40f9`; 42 commits touch the
 path to date) and is committed-clean with its bot mirror byte-identical (probe
 E:bot-deliv-parity). Its own convention — and this card's acceptance
 criterion — is exactly three `## Finding` sections, so every prior pass
 **rewrote** the file in place rather than appending a §N section (the append
-convention used on other boards would break the exactly-three rule). This pass
-does the same: it re-derives the three findings from the current artifacts —
-whose md5s were measured unchanged this pass, not assumed — and rewrites the
-file. Ordinal convention: the immediately prior revision titled itself the
-*twenty-second* independent offload pass and committed as `6d73660`; this pass
-is therefore the **twenty-third** by that (the file's own preamble) convention.
-There is no usable `fleet offload` note sequence in this file, so the preamble
-ordinal is the operative integer. **Result of the re-derivation: no correction
-to the prior revision was required** — all three findings re-measured to the
-same vector (F1 OK with LOW ×3; F2 OK with a MEDIUM ×1 + LOW ×2; F3 OK with a
-MEDIUM ×1 + LOW ×4), and every `path:N` citation in this file is audited
-line-by-line by the fresh probe below. Artifacts untouched.
+convention used on other boards would break the exactly-three rule; probe
+E:no-appended-section confirms no `## §` section is present). This pass does the
+same: it re-derives the three findings from the current artifacts — whose md5s
+were measured unchanged this pass, not assumed — and rewrites the file. Ordinal
+convention: the immediately prior revision titled itself the *twenty-third*
+independent offload pass and committed as `ec70233`; this pass is therefore the
+**twenty-fourth** by that (the file's own preamble) convention, asserted by
+probe E:ordinal-preamble. There is no usable `fleet offload` note sequence in
+this file, so the preamble ordinal is the operative integer. **Result of the
+re-derivation: no correction to the prior revision was required** — all three
+findings re-measured to the same vector (F1 OK with LOW ×3; F2 OK with a
+MEDIUM ×1 + LOW ×2; F3 OK with a MEDIUM ×1 + LOW ×4), and every `path:N`
+citation in this file is audited line-by-line by the fresh probe below.
+Artifacts untouched.
 
 Citation legend: `routstr_delist.py:N` = the script (both copies, byte-identical);
 `contract:N` = repo `tests/test_routstr_delist_contract.py` (the 25-case
@@ -46,27 +48,29 @@ main suite); `docs:N` = `docs/routstr-delist.md`.
 
 Verification performed this pass (all hermetic; scratch outside `/tmp`): the
 script, both suites and the stand-in doc read end-to-end; a fresh probe,
-`docs/reviews/routstr_f13_probes/probe_f13_pass23.py`, exercising **204 checks**
+`docs/reviews/routstr_f13_probes/probe_f13_pass24.py`, exercising **207 checks**
 (A citation audit, B safety, C confirmation, D fail-safe, E review-record
 integrity) executed **twice with byte-identical transcript sha256
-`5925376989f1c946…` → 204/204 PASS**, zero FAIL lines; repo suite
+`TRANSCRIPT_SHA256 89c3f2552686ba39…` → 207/207 PASS**, zero FAIL lines; repo suite
 `python3 -m pytest tests/test_routstr_delist.py tests/test_routstr_delist_contract.py -q`
 → **121 passed** (96 main + 25 contract); deployed suite
 `cd ~/.hermes/bot && python3 -m pytest tests/test_routstr_delist.py -q` →
 **25 passed**; both with `TMPDIR` off this host's `/tmp` tmpfs (41 % used this
-pass).
+pass). Main-suite md5 `293b0459b636a918…`; all four artifact digests are
+unchanged from the prior pass.
 
-**Disclosed probe deviations (artifact correct in every case).** The first draft
-of this pass's section-B DML check enumerated executable SQL by walking
-`ast.Constant` nodes — which cannot see the two payload `UPDATE`s, because those
-live in f-strings (`ast.JoinedStr`), not plain string constants. That check
-would have silently undercounted and so understated the mutation surface. It was
-replaced, before the probe's first run, with payload-level assertions (execute
-the real builder outputs and count `UPDATE ` / scan for
-INSERT/DELETE/DROP/ALTER/REPLACE) that measure the strings the module actually
-emits. The artifacts were correct throughout; the corrected probe runs to
-204/204. Citing this because a verifier that hides its own bug is worse than
-none.
+**Disclosed probe deviations (artifact correct in every case).** Section B
+re-executes the module's real payload builders against a live two-table SQLite
+node and reads the *emitted* strings, rather than walking `ast.Constant` nodes:
+the mutating `UPDATE`s live inside f-strings (`ast.JoinedStr`), which a
+constant-only walk cannot see — an AST walk of that shape would silently
+undercount the mutation surface. The prior pass's section-B DML check was
+corrected for exactly this reason and this pass keeps the payload-level
+measurement (execute the real builder outputs, count `UPDATE `, scan for
+INSERT/DELETE/DROP/ALTER/REPLACE). This pass's three new E-checks
+(E:ordinal-preamble, E:preamble-contract-HIGH, E:no-appended-section) audit the
+review record itself; the check count therefore rises from the prior pass's 204
+to 207. Citing this because a verifier that hides its own bug is worse than none.
 
 ---
 
