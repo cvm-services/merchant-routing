@@ -1,4 +1,4 @@
-# Findings 1–3 Review: routstr_delist — twenty-seventh independent offload pass
+# Findings 1–3 Review: routstr_delist — twenty-eighth independent offload pass
 
 Scope (per the original task): finding 1 safety (delisting the routstr SALE must
 never disable the routstr provider or touch the T470 flat-router ladder),
@@ -15,59 +15,61 @@ is MISSING — HIGH.** `~/.hermes/bot/docs/` holds only `routstr-delist.md` (197
 lines, md5 `e385af98b9c142ee…`, byte-identical to repo `docs/routstr-delist.md`,
 probe E:bot-parity-docs) and `reviews/`; the contract role is filled by that
 stand-in doc, read end-to-end this pass. Re-measured this pass: the path does
-not exist (probe E:contract-path-missing-HIGH). This is an artifact-provisioning
-defect, deliberately reported here in the preamble and **not** promoted into one
-of the three findings — it is not a defect in the script or its tests.
+not exist (`find ~/.hermes/bot/docs -name '*contract*'` → empty; probe
+E:contract-path-missing-HIGH). This is an artifact-provisioning defect,
+deliberately reported here in the preamble and **not** promoted into one of the
+three findings — it is not a defect in the script or its tests.
 
 **Duplicate-dispatch disclosure.** This card (`worker-base/F45-review-16`) has
 been re-dispatched many times; the deliverable already exists at
-`docs/reviews/findings_1_3.md` (creating commit `11e40f9`; 45 commits touched the
-path as measured on the pre-write blob this pass) and is committed-clean with its
-bot mirror byte-identical (probe E:bot-deliv-parity). Its own convention — and
-this card's acceptance criterion — is exactly three `## Finding` sections, so
-every prior pass **rewrote** the file in place rather than appending a §N section
-(the append convention used on other boards would break the exactly-three rule;
-probe E:no-appended-section confirms no `## §` heading line is present). This pass
-does the same: it re-derives the three findings from the current artifacts —
-whose md5s were measured unchanged this pass, not assumed — and rewrites the
-file. Ordinal convention: the immediately prior revision titled itself the
-*twenty-sixth* independent offload pass and committed as `99ca2a7`; this pass is
-therefore the **twenty-seventh** by that (the file's own preamble) convention,
-asserted by probe E:ordinal-preamble. There is no usable `fleet offload` note
-sequence in this file (the two-word phrase occurs once on the pre-write blob and
-that single hit is an earlier pass's own sentence *claiming* the count is zero,
-so the convention is inapplicable rather than merely zero); the preamble ordinal
-is the operative integer. **Result of the re-derivation: the finding vector is
-unchanged, but the fresh citation audit caught two stale off-by-one/off-by-bullet
-citations in the prior revision, which this pass corrects** — (1) finding 2 cited
-`routstr_delist.py:633` for the relist flag-clear, but line 633 is the
-`update_state(...)` call opening; the flag clear `delisted=False, last_reason="relist"`
-is at `routstr_delist.py:634` (probe A:src634; the probe's citation audit flagged
-the 633 mismatch, which is how it was found); (2) finding 3's LOW (a) cited
-`docs:56` for the `--preds-key` scoping documentation, but `docs:56` is the
-freshness-guard bullet — the `--preds-key` bullet is `docs:54`–`docs:55`
-(probes A:docs54 / A:docs55). Neither correction changes any severity: all three
-findings re-measured to the same vector (F1 OK with LOW ×3; F2 OK with a MEDIUM
-×1 + LOW ×2; F3 OK with a MEDIUM ×1 + LOW ×4), and every `path:N` citation in
-this file is audited line-by-line by the fresh probe below. Artifacts untouched.
+`docs/reviews/findings_1_3.md` (creating commit `11e40f9`) and is committed-clean
+with its bot mirror byte-identical (probe E:mirror-parity; pre-write md5
+`17058b40c36b895b…`, measured this pass, unchanged from the prior revision). Its
+own convention — and this card's acceptance criterion — is exactly three
+`## Finding` sections, so every prior pass **rewrote** the file in place rather
+than appending a §N section (probe E:exactly-three-h2 = 3 and E:no-appended-section).
+This pass does the same: it re-derives the three findings from the current
+artifacts — whose md5s were measured unchanged this pass (`2ea724ef…`, not
+assumed). Ordinal convention: the immediately prior revision titled itself the
+*twenty-seventh* independent offload pass and committed as `f86963d`; this pass
+is therefore the **twenty-eighth** by that (the file's own preamble) convention,
+asserted by probe E:ordinal-preamble. **Result of the re-derivation: the finding
+vector is unchanged, and — unlike the prior two passes — the fresh citation
+audit found ZERO stale citations.** All 112 `A:` citation checks (covering every
+`path:N` reference in the three finding bodies below, plus the load-bearing
+probe anchors) pass byte-exactly against the live blobs; in particular the two
+off-by-one/off-by-bullet citations that the *twenty-seventh* pass corrected —
+finding 2's relist flag-clear at `routstr_delist.py:634` (not `:633`, which is
+the `update_state(...)` call opening) and finding 3's LOW (a) `--preds-key`
+scoping doc at `docs:54`–`docs:55` (not `docs:56`, the freshness-guard bullet) —
+are re-confirmed correct here (probes A:src634 / A:docs54 / A:docs55 / A:docs56).
+No severity moved: all three findings re-measure to the same vector (F1 OK with
+LOW ×3; F2 OK with a MEDIUM ×1 + LOW ×2; F3 OK with a MEDIUM ×1 + LOW ×4).
+Artifacts untouched.
 
 Citation legend: `routstr_delist.py:N` = the script (both copies, byte-identical);
 `contract:N` = repo `tests/test_routstr_delist_contract.py` (the 25-case
-deployed suite); `tests:N` = repo `tests/test_routstr_delist.py` (the 96-case
-main suite); `docs:N` = `docs/routstr-delist.md`.
+deployed suite, byte-identical to `~/.hermes/bot/tests/test_routstr_delist.py`);
+`tests:N` = repo `tests/test_routstr_delist.py` (the 96-case main suite);
+`docs:N` = `docs/routstr-delist.md`.
 
 Verification performed this pass (all hermetic; scratch outside `/tmp`): the
-script, both suites and the stand-in doc read end-to-end; a fresh probe,
-`docs/reviews/routstr_f13_probes/probe_f13_pass27.py`, exercising **204 checks**
-(A citation audit, B safety, C confirmation, D fail-safe, E review-record
-integrity) executed **twice with byte-identical transcript sha256
-`54f69a2169c96758ee8d65a7e21dc1a5812642013df5a5ee613fe4dff4edf231` → 204/204 PASS**, zero FAIL lines; repo suite
-`python3 -m pytest tests/test_routstr_delist.py tests/test_routstr_delist_contract.py -q`
-→ **121 passed** (96 main + 25 contract); deployed suite
+script, both suites and the stand-in doc read end-to-end; a freshly authored
+probe, `docs/reviews/routstr_f13_probes/probe_f13_pass28.py`, exercising **205
+checks** (A citation audit ×112, B safety ×26, C confirmation ×25, D fail-safe
+×29, E review-record integrity ×13) executed **twice with byte-identical
+transcript sha256
+`a89e85a5773663bf8684744992b3573ffecb315c0552994cb06ef9454f5802c0` → 205/205 PASS**,
+zero FAIL lines; repo main suite
+`python3 -m pytest tests/test_routstr_delist.py -q` → **96 passed** in 65.75 s
+(fsync unpatched — this host's `os.fsync` can stall, so it was run alone in the
+background rather than beside the contract suite); repo/deployed contract suite
 `cd ~/.hermes/bot && python3 -m pytest tests/test_routstr_delist.py -q` →
-**25 passed**; both with `TMPDIR` off this host's `/tmp` tmpfs (41 % used this
-pass). Main-suite md5 `293b0459b636a918…`; all four artifact digests are
-unchanged from the prior pass.
+**25 passed** in 31.33 s (byte-identical to the repo contract copy, so the repo
+total is 96 + 25 = **121 passed**); all runs with `TMPDIR` off this host's `/tmp`
+tmpfs (42 % used this pass). Artifact digests this pass: script
+`2ea724ef08d857cd…`, contract suite `031851b356f0de40…`, stand-in doc
+`e385af98b9c142ee…` — all unchanged from the prior pass.
 
 **Disclosed probe deviations (artifact correct in every case).** Section B
 re-executes the module's real payload builders against a live two-table SQLite
@@ -75,15 +77,16 @@ node and reads the *emitted* strings, rather than walking `ast.Constant` nodes:
 the mutating `UPDATE`s live inside f-strings (`ast.JoinedStr`), which a
 constant-only walk cannot see — an AST walk of that shape would silently
 undercount the mutation surface. This is the same payload-level measurement the
-prior passes keep. Two probe-authoring bugs were found and fixed while building
-this pass's harness, disclosed because a verifier that hides its own bug is worse
-than none: (i) the citation audit initially expected the relist flag-clear at
-`src:633`; the resulting FAIL is exactly how the stale citation in the prior
-revision was discovered (source line is 634); (ii) the appended-section check was
-first written as a naive `"## §" not in text`, which this document's own prose at
-line 30 (`` `## §` ``) defeats — it now uses a line-anchored regex. Section E's
+prior passes keep, carried forward as a regression harness (restructured, not
+copied verbatim) and re-run against the current blobs this pass. Section D's
+`--dry-run` / staleness drives replace `rd.time` and `rd._SshBackend` with a
+fake clock and a payload-executing fake backend so the durable-state assertions
+observe real `save_state`/`load_state` behaviour without ssh; `os.fsync` is
+monkeypatched to a no-op only for the duration of the probe (the ATOMICITY the
+suite guards is the tmp + `os.replace` protocol, which stays real). Section E's
 ordinal check is satisfied by both the pre- and post-write revisions, so it is
-not a pre-write baseline flag.
+not a pre-write baseline flag. No probe-authoring bug was found this pass; the
+harness returned 205/205 on its first two executions.
 
 ---
 
@@ -220,9 +223,7 @@ severity: **OK** — requirement MET; residual **MEDIUM** ×1, **LOW** ×2
   C:relist-clears-flag / C:relist-pops-names). Relist success is gated on the
   round-trip self-report alone (`routstr_delist.py:626`), and on that self-report
   the run sets `delisted=false` and pops `pulled_models`
-  (`routstr_delist.py:634`, `routstr_delist.py:635`; **citation corrected this
-  pass from `:633`, which is the `update_state(...)` call opening**). Measured: a
-  relist executes
+  (`routstr_delist.py:634`, `routstr_delist.py:635`). Measured: a relist executes
   `kinds == ["relist"]` only — **no verify round-trip** — yet clears the flag and
   destroys the stored scoped name set. A lying relist (rc 0, ok printed, UPDATE
   not landed — the same fault class the contract deemed must-fix for delist)
@@ -323,9 +324,7 @@ probed:
   that purpose. Probes D:unscoped-default-fires / D:scoped-filter-quiets drive
   `main()` with a mixed feed: with no `--preds-key` the foreign `openrouter`
   variance spike fires the delist, while the pure filter scopes correctly when
-  given a key; pinned `tests:776`, documented unconditionally at `docs:54`–`docs:55`
-  (**citation corrected this pass from `docs:56`, which is the freshness-guard
-  bullet**).
+  given a key; pinned `tests:776`, documented unconditionally at `docs:54`–`docs:55`.
 - (**LOW**) (b) mtime-only freshness (`routstr_delist.py:485`,
   `routstr_delist.py:494`): a writer that rewrites `preds.json` with old data
   refreshes the mtime and bypasses the guard.
