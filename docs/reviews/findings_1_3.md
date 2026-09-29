@@ -1,4 +1,4 @@
-# Findings 1–3 Review: routstr_delist — thirty-first independent offload pass
+# Findings 1–3 Review: routstr_delist — thirty-second independent offload pass
 
 Scope (per the original task): finding 1 safety (delisting the routstr SALE must
 never disable the routstr provider or touch the T470 flat-router ladder),
@@ -16,9 +16,9 @@ match). **`~/.hermes/bot/docs/routstr_delist_contract.md` is MISSING — HIGH.**
 `e385af98b9c142ee…`, byte-identical to repo `docs/routstr-delist.md`) and
 `reviews/`; the contract role is filled by that stand-in doc, read end-to-end
 this pass. Re-measured this pass: `ls` of the path returns
-`No such file or directory`, and a targeted `find ~/.hermes/bot -iname
-'*contract*'` returned no hits before exceeding the tool timeout (the sweep
-timed out on the 19 G `bot` tree; the direct `ls` is the decisive measurement).
+`No such file or directory` (probe E:contract-path-missing), and the `bot` tree
+was not swept this pass (a `find` over the 19 G tree exceeded the tool timeout on
+the 31st pass; the direct `ls` is the decisive measurement).
 This is an artifact-provisioning defect, deliberately reported here in the
 preamble and **not** promoted into one of the three findings — it is not a
 defect in the script or its tests.
@@ -27,22 +27,23 @@ defect in the script or its tests.
 been re-dispatched many times; the deliverable already exists at
 `docs/reviews/findings_1_3.md` (creating commit `11e40f9`, `git log
 --diff-filter=A`) and is committed-clean. `git log --oneline -- <path> | wc -l`
-→ **49** touches. Its own convention — and this card's acceptance criterion — is
-exactly three `## Finding` sections (`grep -c '^## '` → 3, measured this pass),
+→ **50** touches (measured this pass; 49 at the 31st). Its own convention — and
+this card's acceptance criterion — is exactly three `## Finding` sections
+(`grep -c '^## '` → 3, re-asserted this pass by probe E:exactly-three-findings),
 so every prior pass **rewrote** the file in place rather than appending a §N
 section. This pass does the same: it re-derives the three findings from the
 current artifacts, whose md5s were measured unchanged this pass (`2ea724ef…`,
 `031851b356…`, `e385af98…` — not assumed). Ordinal convention: the immediately
-prior revision titled itself the *thirtieth* independent offload pass and
-committed as `8d12776`; this pass is therefore the **thirty-first** by that (the
+prior revision titled itself the *thirty-first* independent offload pass and
+committed as `b7b79ba`; this pass is therefore the **thirty-second** by that (the
 file's own preamble) convention. The pre-write baseline this pass replaces is
-that 30th blob: `git show 8d12776:docs/reviews/findings_1_3.md | md5sum` →
-`bc2e4b295a7b2c40…`, byte-equal to the working file before the rewrite (measured,
-not carried from the 30th pass's prose). **Result of the re-derivation: the
-finding vector is unchanged.** All 122 `A:` citation checks pass byte-exactly
-against the live blobs (every `path:N` reference in the three finding bodies
-below). No severity moved: F1 **OK** with LOW ×3; F2 **OK** with a MEDIUM ×1 +
-LOW ×2; F3 **OK** with a MEDIUM ×1 + LOW ×4. Artifacts untouched.
+that 31st blob: `git show b7b79ba:docs/reviews/findings_1_3.md | md5sum` →
+`15ed774cb5c1576c95f977bfa0c13d02`, byte-equal to the working file before the
+rewrite (measured, not carried from the 31st pass's prose). **Result of the
+re-derivation: the finding vector is unchanged.** All 122 `A:` citation checks
+pass byte-exactly against the live blobs (every `path:N` reference in the three
+finding bodies below). No severity moved: F1 **OK** with LOW ×3; F2 **OK** with a
+MEDIUM ×1 + LOW ×2; F3 **OK** with a MEDIUM ×1 + LOW ×4. Artifacts untouched.
 
 Citation legend: `routstr_delist.py:N` = the script (both copies, byte-identical);
 `contract:N` = repo `tests/test_routstr_delist_contract.py` (the 25-case
@@ -52,25 +53,24 @@ deployed suite, byte-identical to `~/.hermes/bot/tests/test_routstr_delist.py`);
 
 Verification performed this pass (all hermetic; scratch off `/tmp`): the script,
 both suites and the stand-in doc read end-to-end; a fresh probe for this pass,
-`docs/reviews/routstr_f13_probes/probe_f13_pass31.py` (written this pass; the A
+`docs/reviews/routstr_f13_probes/probe_f13_pass32.py` (written this pass; the A
 citation audit re-asserts each cited line by substring, and B/C/D/E re-execute
 the module's real payloads and CLI paths against hermetic fakes),
-exercising **196 checks** (A citation audit ×122, B safety ×30, C confirmation
-×16, D fail-safe ×26, E review-record integrity ×2), executed **twice with
+exercising **198 checks** (A citation audit ×122, B safety ×30, C confirmation
+×16, D fail-safe ×26, E review-record integrity ×4), executed **twice with
 byte-identical transcript sha256
-`413e1869d452cb4b36db5d8a6afc315ae7568f5cbecc8efb17e1e56484ed00b1` → 196/196
-PASS**, zero FAIL lines. Two false-FAIL probe bugs were found and fixed during
-authoring (both probe defects, artifact correct): a docs:54 needle that included
-backticks the line does not carry, and a stale `FakeBackend.verify_res`
-(`count==3` left over from the lying-pull case) that made two later
-override/unscoped runs report `delist_failed` instead of firing — the first run
-read `192/196` and both FAILs were the probe's, not the artifact's. The repo
-main suite run alone (this host's `os.fsync` can stall, so the suite was not
-run beside the contract suite) → `python3 -m pytest tests/test_routstr_delist.py
--q` → **96 passed**; the repo contract suite `python3 -m pytest
-tests/test_routstr_delist_contract.py -q` → **25 passed** (byte-identical to the
-deployed bot copy, so the repo total is 96 + 25 = **121 passed**); all runs with
-`TMPDIR` off this host's `/tmp` tmpfs (44 % used this pass).
+`55e95221c9c8129fb9d2c374aabf740a93f5c07a0a67fb83a926f6b31de67084` → 198/198
+PASS**, zero FAIL lines. A pre-write run of the same
+probe read `197/198` with its single FAIL being `E:ordinal-preamble` (the file
+still carried the 31st pass's title) — expected and disclosed, not a defect: the
+ordinal check is POST-only by construction. The repo main suite run alone (this
+host's `os.fsync` can stall, so the suite was not run beside the contract suite)
+→ `python3 -m pytest tests/test_routstr_delist.py -q` → **96 passed in 11.76 s**;
+the repo contract suite `python3 -m pytest
+tests/test_routstr_delist_contract.py -q` → **25 passed in 0.43 s**
+(byte-identical to the deployed bot copy, so the repo total is 96 + 25 =
+**121 passed**); all runs with `TMPDIR` off this host's `/tmp` tmpfs (measured
+44 % used this pass: 2.4 G of 5.5 G).
 
 **Disclosed probe deviations (artifact correct in every case).** Section B
 re-executes the module's real payload builders against a live two-table SQLite
