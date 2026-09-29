@@ -1,0 +1,209 @@
+A:src355: PASS L355 want 'UPDATE models SET enabled=0 WHERE enabled=1;'
+A:src361: PASS L361 want 'UPDATE models SET enabled=1;'
+A:src394: PASS L394 want 'UPDATE models SET enabled=1 WHERE name IN'
+A:src371: PASS L371 want 'SELECT name FROM models WHERE enabled=1'
+A:src408: PASS L408 want 'SELECT COUNT(*) FROM models WHERE enabled=1'
+A:src35: PASS L35 want 'upstream_providers'
+A:src352: PASS L352 want 'upstream_providers'
+A:src771: PASS L771 want 'upstream_providers'
+A:src414: PASS L414 want 'def build_ssh_docker_cmd'
+A:src423: PASS L423 want 'shlex.quote(container)'
+A:src424: PASS L424 want 'shlex.quote(payload)'
+A:src425: PASS L425 want 'return ["ssh", ssh_target, remote]'
+A:src459: PASS L459 want 'subprocess.run(argv, timeout=30'
+A:src808: PASS L808 want 'subprocess.run(cmd, capture_output=True'
+A:src600: PASS L600 want 'if args.relist:'
+A:src606: PASS L606 want 'relist_refused'
+A:src611: PASS L611 want 'return 1'
+A:src400: PASS L400 want 'def verify_pull_payload'
+A:src682: PASS L682 want 'vres = backend.verify(deadline=deadline)'
+A:src683: PASS L683 want 'vres.get("ok") is True and vres.get("count") == 0'
+A:src685: PASS L685 want 'res["confirmed"] = True'
+A:src687: PASS L687 want 'confirmed = True'
+A:src75: PASS L75 want 'MAX_PULL_ATTEMPTS = 2'
+A:src726: PASS L726 want 'state["delisted"] = False'
+A:src739: PASS L739 want 'return 3 if newly_blocked else 1'
+A:src790: PASS L790 want 'def verify(self, dry_run=False, deadline=None)'
+A:src814: PASS L814 want 'json.loads(out.splitlines()[-1])'
+A:src822: PASS L822 want 'proc.returncode == 0 and data.get("ok") is True'
+A:src626: PASS L626 want 'if not res.get("ok"):'
+A:src634: PASS L634 want 'delisted=False, last_reason="relist"'
+A:src635: PASS L635 want 'state.pop("pulled_models", None)'
+A:src680: PASS L680 want 'confirmed = True                   # intent only'
+A:src78: PASS L78 want 'STALENESS_S = 1800'
+A:src485: PASS L485 want 'def feed_is_stale'
+A:src494: PASS L494 want 'return not (0 <= age <= max_age_s)'
+A:src495: PASS L495 want 'except OSError:'
+A:src496: PASS L496 want 'return True'
+A:src589: PASS L589 want 'preds_stale = bool(args.preds) and bool(raw_preds) and'
+A:src591: PASS L591 want 'if preds_stale:'
+A:src592: PASS L592 want 'raw_preds = []'
+A:src107: PASS L107 want 'if not preds_now or not preds_prev:'
+A:src143: PASS L143 want 'if not preds:'
+A:src479: PASS L479 want '[d for d in data if isinstance(d, dict)]'
+A:src481: PASS L481 want 'except Exception:'
+A:src482: PASS L482 want 'return []'
+A:src585: PASS L585 want 'preds_error = bool(args.preds) and not raw_preds'
+A:src594: PASS L594 want 'if args.preds_key:'
+A:src597: PASS L597 want 'p.get("key") == args.preds_key'
+A:src152: PASS L152 want 'or isinstance(unc, bool)'
+A:src193: PASS L193 want 'def _hours(p):'
+A:src196: PASS L196 want 'return h if isinstance(h, (int, float)) else None'
+A:src261: PASS L261 want 'if preds:'
+A:src262: PASS L262 want 'new["snapshot"] = snapshot_preds(preds)'
+A:src303: PASS L303 want 'var = variance_jumped(preds_now, threshold=variance_threshold)'
+A:src649: PASS L649 want 'fire = args.delist or dec["fire"]'
+A:src651: PASS L651 want 'if not fire:'
+A:src652: PASS L652 want 'state = update_state(state, ts=time.time(), preds=preds,'
+A:src654: PASS L654 want 'save_state(args.state, state)'
+A:src660: PASS L660 want 'return 1 if (preds_error or preds_stale) else 0'
+A:src656: PASS L656 want '"preds_error": preds_error,'
+A:src699: PASS L699 want 'if args.dry_run:'
+A:src705: PASS L705 want 'state["last_dry_run"] = {"ts": state["ts"],'
+A:src536: PASS L536 want 'ap.add_argument("--ssh-target"'
+A:src537: PASS L537 want 'ap.add_argument("--container"'
+A:src370: PASS L370 want '/app/data/keys.db'
+A:src407: PASS L407 want '/app/data/keys.db'
+A:src164: PASS L164 want 'def manual_override(override_path):'
+A:src172: PASS L172 want 'return os.path.isfile(override_path)'
+A:src580: PASS L580 want 'override = args.manual or manual_override(args.override)'
+A:src561: PASS L561 want 'if args.unblock and blocked:'
+A:src569: PASS L569 want 'if blocked:'
+A:src578: PASS L578 want 'return 3'
+A:src731: PASS L731 want 'state["blocked"] = newly_blocked'
+A:contract468: PASS L468 want 'class TestSemanticGuardLadderUntouched:'
+A:contract108: PASS L108 want 'self.ladder_artifact = tmpdir /'
+A:contract129: PASS L129 want 'CREATE TABLE upstream_providers'
+A:contract160: PASS L160 want 'SELECT name, enabled, weight FROM upstream_providers'
+A:contract480: PASS L480 want 'assert rig.node.ladder_bytes() == ladder_before'
+A:contract483: PASS L483 want '"upstream_providers" not in payload'
+A:contract346: PASS L346 want 'def test_unverified_pull_is_a_failed_delist'
+A:contract308: PASS L308 want 'def test_first_run_without_baseline_is_quiet'
+A:contract504: PASS L504 want 'assert rig.node.ladder_bytes() == ladder_before'
+A:tests303: PASS L303 want 'def test_pull_sql_touches_only_models_listing'
+A:tests311: PASS L311 want 'def test_relist_sql_touches_only_models_listing'
+A:tests336: PASS L336 want 'def test_verify_payload_scoped_to_models_listing'
+A:tests345: PASS L345 want 'def test_ssh_cmd_is_single_shlex_safe_remote_command'
+A:tests176: PASS L176 want 'def test_first_run_never_fires_on_acceleration'
+A:tests567: PASS L567 want 'def test_verify_gates_success'
+A:tests603: PASS L603 want 'def test_verify_failure_is_attempt_failure'
+A:tests146: PASS L146 want 'def test_non_numeric_uncertainty_ignored_not_crash'
+A:tests243: PASS L243 want 'def test_update_state_empty_preds_preserves_baseline'
+A:tests547: PASS L547 want 'def test_unreadable_preds_feed_is_error_not_quiet'
+A:tests937: PASS L937 want 'def test_stale_feed_never_triggers'
+A:tests968: PASS L968 want 'def test_staleness_threshold_boundary'
+A:tests980: PASS L980 want 'def test_stale_feed_exit_zero_when_override_fires'
+A:tests995: PASS L995 want 'def test_stale_feed_baseline_not_consumed'
+A:tests776: PASS L776 want 'def test_preds_key_scopes_triggers'
+A:tests1039: PASS L1039 want 'def test_relist_refuses_blanket_without_opt_in'
+A:tests1056: PASS L1056 want 'def test_relist_any_executes_blanket'
+A:tests1072: PASS L1072 want 'class TestDryRunPurity(unittest.TestCase):'
+A:tests1107: PASS L1107 want 'def test_pull_parses_last_line_json_and_gates_on_ok'
+A:tests1116: PASS L1116 want 'def test_pull_garbage_stdout_is_failure'
+A:tests1123: PASS L1123 want 'def test_pull_nonzero_rc_is_failure_even_with_ok_payload'
+A:tests1146: PASS L1146 want 'def test_exception_is_failure_not_crash'
+A:docs29: PASS L29 want '**No blanket relist.**'
+A:docs54: PASS L54 want '`--preds-key <key>` scopes evaluation'
+A:docs55: PASS L55 want 'never pull the routstr SALE.'
+A:docs56: PASS L56 want '**Freshness guard (cold-review finding 3):**'
+A:docs60: PASS L60 want 'The manual override is never gated on freshness.'
+A:docs69: PASS L69 want '**Re-fetch confirmation (cold-review finding 2):**'
+A:docs71: PASS L71 want 'Success is gated on the re-fetch reporting `count == 0`'
+A:docs87: PASS L87 want '**Dry-run is intent-only (verification finding 7c):**'
+B:pull-sql-models-only: PASS UPDATE models SET enabled=0 WHERE enabled=1;
+B:blanket-sql-models-only: PASS 
+B:pull-names-models: PASS 
+B:pull-one-update: PASS UPDATE x1
+B:verify-read-only: PASS 
+B:relist-scoped-one-update: PASS 
+B:relist-blanket-one-update: PASS 
+B:pull-no-dml: PASS 
+B:verify-no-dml: PASS 
+B:relist-no-dml: PASS 
+B:upstream-mentions-exactly-3: PASS [35, 352, 771]
+B:no-shell-true: PASS 
+B:subprocess-run-2-sites: PASS count=2
+B:ssh-argv-len3: PASS 
+B:hostile-container-single-token: PASS rt[:3]=['docker', 'exec', "evil'; rm -rf / #"]
+B:semantic-pull-captures-names: PASS ['gpt-4o', 'claude-3-5-sonnet', 'llama-3.1-405b']
+B:semantic-pull-disabled-all: PASS {'gpt-4o': 0, 'claude-3-5-sonnet': 0, 'llama-3.1-405b': 0, 'operator-disabled-model': 0}
+B:semantic-verify-count0: PASS 
+B:semantic-operator-row-stays-off: PASS 
+B:semantic-relist-restores-2: PASS {'ok': True, 'restored': 3}
+B:semantic-relist-restores-only-captured: PASS {'gpt-4o': 1, 'claude-3-5-sonnet': 1, 'llama-3.1-405b': 1, 'operator-disabled-model': 0}
+B:semantic-providers-unchanged: PASS [('openrouter', 1, 20.0), ('routstr', 1, 10.0), ('zai', 1, 30.0)]
+B:semantic-routstr-still-candidate: PASS 
+B:blanket-relist-refused-before-backend: PASS              "ts": time.time()}, indent=2, sort_keys=True))
+            return 1
+B:contract-builds-ladder: PASS 
+B:contract-asserts-ladder-bytes: PASS 
+C:verify-is-separate-roundtrip: PASS 
+C:success-gated-on-count0: PASS 
+C:lying-pull-forced-fail: PASS 
+C:retry-bounded: PASS 
+C:relist-no-verify-roundtrip: PASS 
+C:relist-gated-on-selfreport: PASS 
+C:relist-clears-flag: PASS 
+C:relist-pops-names: PASS 
+C:delist-has-verify-roundtrip: PASS 
+C:delist-merge-no-clobber: PASS 
+C:happy-rc0: PASS rc=0
+C:happy-action-delist: PASS 
+C:happy-confirmed: PASS 
+C:happy-verified-count0: PASS 
+C:happy-kinds: PASS ['pull', 'verify']
+C:happy-durable-delisted: PASS 
+C:lying-rc1: PASS rc=1
+C:lying-action: PASS 
+C:lying-kinds: PASS ['pull', 'verify', 'pull', 'verify']
+C:lying-no-flag: PASS 
+C:lying-breaker-tick: PASS 
+C:relist-rc0: PASS 
+C:relist-kinds-no-verify: PASS ['relist']
+C:relist-cleared-flag: PASS 
+C:relist-names-popped: PASS 
+D:stale-fresh-false: PASS 
+D:stale-boundary-inclusive-false: PASS 
+D:stale-1801-true: PASS 
+D:stale-future-mtime-true: PASS 
+D:stale-missing-path-true: PASS 
+D:absence-quiet-rc0: PASS 
+D:absence-no-remote: PASS 
+D:absence-no-preds-error: PASS 
+D:garbage-rc1: PASS rc=1
+D:garbage-preds-error: PASS 
+D:garbage-action-none: PASS 
+D:garbage-no-remote: PASS 
+D:garbage-baseline-intact: PASS {'zai\x1f1h': 12.0}
+D:stale-rc1: PASS rc=1
+D:stale-flag: PASS 
+D:stale-action-none: PASS 
+D:stale-no-remote: PASS 
+D:stale-baseline-intact: PASS 
+D:manual-not-gated-rc0: PASS rc=0
+D:manual-not-gated-delist: PASS 
+D:manual-stale-observed: PASS 
+D:unscoped-default-fires: PASS action=delist reasons=['kalman variance jumped (1 window(s), max 0.95)']
+D:scoped-filter-quiets: PASS 
+D:quiet-dryrun-rc0: PASS rc=0
+D:quiet-dryrun-refreshes-baseline: PASS {'zai\x1f1h': 11.0}
+D:quiet-dryrun-no-last-run: PASS 
+D:firing-dryrun-records-intent: PASS 
+D:firing-dryrun-pull-only: PASS []
+D:firing-dryrun-no-flag: PASS 
+E:three-finding-sections: PASS ['1', '2', '3']
+E:exactly-three-h2: PASS count=3
+E:no-appended-section: PASS 
+E:three-severity-tags: PASS ['OK', 'OK', 'OK']
+E:mirror-parity: PASS equal
+E:contract-path-missing-HIGH: PASS 
+E:bot-parity-src: PASS 
+E:bot-parity-tests: PASS 
+E:bot-parity-docs: PASS 
+E:script-md5: PASS 2ea724ef08d857cd7b88a957300e70b4
+E:contract-md5: PASS 031851b356f0de4089512f02f13f05cc
+E:docs-md5: PASS e385af98b9c142eec736672d4dcca290
+E:ordinal-preamble: PASS 
+GROUP TALLY: A=112 B=26 C=25 D=29 E=13 total=205
+RESULT: 205/205 PASS  fails=0
+TRANSCRIPT SHA256: a89e85a5773663bf8684744992b3573ffecb315c0552994cb06ef9454f5802c0

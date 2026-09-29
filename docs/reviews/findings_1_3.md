@@ -1,4 +1,4 @@
-# Findings 1–3 Review: routstr_delist — twenty-eighth independent offload pass
+# Findings 1–3 Review: routstr_delist — twenty-ninth independent offload pass
 
 Scope (per the original task): finding 1 safety (delisting the routstr SALE must
 never disable the routstr provider or touch the T470 flat-router ladder),
@@ -24,20 +24,21 @@ three findings — it is not a defect in the script or its tests.
 been re-dispatched many times; the deliverable already exists at
 `docs/reviews/findings_1_3.md` (creating commit `11e40f9`) and is committed-clean
 with its bot mirror byte-identical (probe E:mirror-parity; pre-write md5
-`17058b40c36b895b…`, measured this pass, unchanged from the prior revision). Its
+`8a8616f6fe95d09b…` — the twenty-eighth revision as committed at `26fd1be`,
+measured this pass; the twenty-seventh revision at `f86963d` was
+`17058b40c36b895b…`). Its
 own convention — and this card's acceptance criterion — is exactly three
 `## Finding` sections, so every prior pass **rewrote** the file in place rather
 than appending a §N section (probe E:exactly-three-h2 = 3 and E:no-appended-section).
 This pass does the same: it re-derives the three findings from the current
 artifacts — whose md5s were measured unchanged this pass (`2ea724ef…`, not
 assumed). Ordinal convention: the immediately prior revision titled itself the
-*twenty-seventh* independent offload pass and committed as `f86963d`; this pass
-is therefore the **twenty-eighth** by that (the file's own preamble) convention,
+*twenty-eighth* independent offload pass and committed as `26fd1be`; this pass
+is therefore the **twenty-ninth** by that (the file's own preamble) convention,
 asserted by probe E:ordinal-preamble. **Result of the re-derivation: the finding
-vector is unchanged, and — unlike the prior two passes — the fresh citation
-audit found ZERO stale citations.** All 112 `A:` citation checks (covering every
-`path:N` reference in the three finding bodies below, plus the load-bearing
-probe anchors) pass byte-exactly against the live blobs; in particular the two
+vector is unchanged.** All 112 `A:` citation checks (covering every `path:N`
+reference in the three finding bodies below, plus the load-bearing probe anchors)
+pass byte-exactly against the live blobs; in particular the two
 off-by-one/off-by-bullet citations that the *twenty-seventh* pass corrected —
 finding 2's relist flag-clear at `routstr_delist.py:634` (not `:633`, which is
 the `update_state(...)` call opening) and finding 3's LOW (a) `--preds-key`
@@ -55,19 +56,18 @@ deployed suite, byte-identical to `~/.hermes/bot/tests/test_routstr_delist.py`);
 
 Verification performed this pass (all hermetic; scratch outside `/tmp`): the
 script, both suites and the stand-in doc read end-to-end; a freshly authored
-probe, `docs/reviews/routstr_f13_probes/probe_f13_pass28.py`, exercising **205
-checks** (A citation audit ×112, B safety ×26, C confirmation ×25, D fail-safe
-×29, E review-record integrity ×13) executed **twice with byte-identical
-transcript sha256
+probe for this pass, `docs/reviews/routstr_f13_probes/probe_f13_pass29.py`,
+exercising **205 checks** (A citation audit ×112, B safety ×26, C confirmation
+×25, D fail-safe ×29, E review-record integrity ×13) executed **twice with
+byte-identical transcript sha256
 `a89e85a5773663bf8684744992b3573ffecb315c0552994cb06ef9454f5802c0` → 205/205 PASS**,
-zero FAIL lines; repo main suite
-`python3 -m pytest tests/test_routstr_delist.py -q` → **96 passed** in 65.75 s
-(fsync unpatched — this host's `os.fsync` can stall, so it was run alone in the
-background rather than beside the contract suite); repo/deployed contract suite
-`cd ~/.hermes/bot && python3 -m pytest tests/test_routstr_delist.py -q` →
-**25 passed** in 31.33 s (byte-identical to the repo contract copy, so the repo
+zero FAIL lines; repo main suite `python3 -m pytest tests/test_routstr_delist.py -q`
+→ **96 passed** in 142.36 s (fsync unpatched — this host's `os.fsync` can stall,
+so it was run alone rather than beside the contract suite); repo/deployed contract
+suite `cd ~/.hermes/bot && python3 -m pytest tests/test_routstr_delist.py -q` →
+**25 passed** in 6.12 s (byte-identical to the repo contract copy, so the repo
 total is 96 + 25 = **121 passed**); all runs with `TMPDIR` off this host's `/tmp`
-tmpfs (42 % used this pass). Artifact digests this pass: script
+tmpfs (44 % used this pass). Artifact digests this pass: script
 `2ea724ef08d857cd…`, contract suite `031851b356f0de40…`, stand-in doc
 `e385af98b9c142ee…` — all unchanged from the prior pass.
 
