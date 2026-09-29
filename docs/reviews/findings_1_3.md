@@ -1,4 +1,4 @@
-# Findings 1–3 Review: routstr_delist — twenty-ninth independent offload pass
+# Findings 1–3 Review: routstr_delist — thirtieth independent offload pass
 
 Scope (per the original task): finding 1 safety (delisting the routstr SALE must
 never disable the routstr provider or touch the T470 flat-router ladder),
@@ -24,17 +24,17 @@ three findings — it is not a defect in the script or its tests.
 been re-dispatched many times; the deliverable already exists at
 `docs/reviews/findings_1_3.md` (creating commit `11e40f9`) and is committed-clean
 with its bot mirror byte-identical (probe E:mirror-parity; pre-write md5
-`8a8616f6fe95d09b…` — the twenty-eighth revision as committed at `26fd1be`,
-measured this pass; the twenty-seventh revision at `f86963d` was
-`17058b40c36b895b…`). Its
+`aaa996ff4d3c2d05…` — the twenty-ninth revision as committed at `49bc5b6`,
+measured this pass; the twenty-eighth revision at `26fd1be` was
+`8a8616f6fe95d09b…`). Its
 own convention — and this card's acceptance criterion — is exactly three
 `## Finding` sections, so every prior pass **rewrote** the file in place rather
 than appending a §N section (probe E:exactly-three-h2 = 3 and E:no-appended-section).
 This pass does the same: it re-derives the three findings from the current
 artifacts — whose md5s were measured unchanged this pass (`2ea724ef…`, not
 assumed). Ordinal convention: the immediately prior revision titled itself the
-*twenty-eighth* independent offload pass and committed as `26fd1be`; this pass
-is therefore the **twenty-ninth** by that (the file's own preamble) convention,
+*twenty-ninth* independent offload pass and committed as `49bc5b6`; this pass
+is therefore the **thirtieth** by that (the file's own preamble) convention,
 asserted by probe E:ordinal-preamble. **Result of the re-derivation: the finding
 vector is unchanged.** All 112 `A:` citation checks (covering every `path:N`
 reference in the three finding bodies below, plus the load-bearing probe anchors)
@@ -55,17 +55,19 @@ deployed suite, byte-identical to `~/.hermes/bot/tests/test_routstr_delist.py`);
 `docs:N` = `docs/routstr-delist.md`.
 
 Verification performed this pass (all hermetic; scratch outside `/tmp`): the
-script, both suites and the stand-in doc read end-to-end; a freshly authored
-probe for this pass, `docs/reviews/routstr_f13_probes/probe_f13_pass29.py`,
+script, both suites and the stand-in doc read end-to-end; a probe for this pass,
+`docs/reviews/routstr_f13_probes/probe_f13_pass30.py` (the pass-11..29 lineage,
+re-parameterised for this pass; every citation re-asserted and every semantic
+re-executed against the current blobs),
 exercising **205 checks** (A citation audit ×112, B safety ×26, C confirmation
 ×25, D fail-safe ×29, E review-record integrity ×13) executed **twice with
 byte-identical transcript sha256
-`a89e85a5773663bf8684744992b3573ffecb315c0552994cb06ef9454f5802c0` → 205/205 PASS**,
+`3b5c5406b2475d2117c8a6ad9d97bd9e1c317d3ad627a3c0940ce253b30f2cbe` → 205/205 PASS**,
 zero FAIL lines; repo main suite `python3 -m pytest tests/test_routstr_delist.py -q`
-→ **96 passed** in 142.36 s (fsync unpatched — this host's `os.fsync` can stall,
+→ **96 passed** in 10.07 s (fsync unpatched — this host's `os.fsync` can stall,
 so it was run alone rather than beside the contract suite); repo/deployed contract
 suite `cd ~/.hermes/bot && python3 -m pytest tests/test_routstr_delist.py -q` →
-**25 passed** in 6.12 s (byte-identical to the repo contract copy, so the repo
+**25 passed** in 6.59 s (byte-identical to the repo contract copy, so the repo
 total is 96 + 25 = **121 passed**); all runs with `TMPDIR` off this host's `/tmp`
 tmpfs (44 % used this pass). Artifact digests this pass: script
 `2ea724ef08d857cd…`, contract suite `031851b356f0de40…`, stand-in doc
@@ -77,16 +79,22 @@ node and reads the *emitted* strings, rather than walking `ast.Constant` nodes:
 the mutating `UPDATE`s live inside f-strings (`ast.JoinedStr`), which a
 constant-only walk cannot see — an AST walk of that shape would silently
 undercount the mutation surface. This is the same payload-level measurement the
-prior passes keep, carried forward as a regression harness (restructured, not
-copied verbatim) and re-run against the current blobs this pass. Section D's
+prior passes keep, carried forward as a regression harness and re-run against
+the current blobs this pass. Section D's
 `--dry-run` / staleness drives replace `rd.time` and `rd._SshBackend` with a
 fake clock and a payload-executing fake backend so the durable-state assertions
 observe real `save_state`/`load_state` behaviour without ssh; `os.fsync` is
 monkeypatched to a no-op only for the duration of the probe (the ATOMICITY the
-suite guards is the tmp + `os.replace` protocol, which stays real). Section E's
-ordinal check is satisfied by both the pre- and post-write revisions, so it is
-not a pre-write baseline flag. No probe-authoring bug was found this pass; the
-harness returned 205/205 on its first two executions.
+suite guards is the tmp + `os.replace` protocol, which stays real). **One
+probe-authoring bug was found and fixed this pass:** the inherited
+`E:ordinal-preamble` check matched a literal `twenty-\w+ independent offload
+pass`, which the twenty-first..twenty-ninth revisions satisfied but this
+revision — the first in the *thirty* decade — legitimately does not. The check
+was re-parameterised to assert the exact expected title
+(`… endswith("thirtieth independent offload pass")`), making it a precise
+single-valued assertion rather than a decade-prefixed membership test; the
+pre-write run passed under the old regex only because the deliverable was still
+the twenty-ninth revision at that moment.
 
 ---
 
