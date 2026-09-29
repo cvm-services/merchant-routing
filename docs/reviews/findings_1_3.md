@@ -1,4 +1,4 @@
-# Findings 1–3 Review: routstr_delist — twenty-fifth independent offload pass
+# Findings 1–3 Review: routstr_delist — twenty-sixth independent offload pass
 
 Scope (per the original task): finding 1 safety (delisting the routstr SALE must
 never disable the routstr provider or touch the T470 flat-router ladder),
@@ -21,7 +21,7 @@ of the three findings — it is not a defect in the script or its tests.
 
 **Duplicate-dispatch disclosure.** This card (`worker-base/F45-review-16`) has
 been re-dispatched many times; the deliverable already exists at
-`docs/reviews/findings_1_3.md` (creating commit `11e40f9`; 43 commits touched the
+`docs/reviews/findings_1_3.md` (creating commit `11e40f9`; 44 commits touched the
 path as measured on the pre-write blob this pass) and is committed-clean with its
 bot mirror byte-identical (probe E:bot-deliv-parity). Its own convention — and
 this card's acceptance criterion — is exactly three `## Finding` sections, so
@@ -30,9 +30,9 @@ every prior pass **rewrote** the file in place rather than appending a §N secti
 probe E:no-appended-section confirms no `## §` section is present). This pass does
 the same: it re-derives the three findings from the current artifacts — whose md5s
 were measured unchanged this pass, not assumed — and rewrites the file. Ordinal
-convention: the immediately prior revision titled itself the *twenty-fourth*
-independent offload pass and committed as `c22e7a9`; this pass is therefore the
-**twenty-fifth** by that (the file's own preamble) convention, asserted by
+convention: the immediately prior revision titled itself the *twenty-fifth*
+independent offload pass and committed as `996e89f`; this pass is therefore the
+**twenty-sixth** by that (the file's own preamble) convention, asserted by
 probe E:ordinal-preamble. There is no usable `fleet offload` note sequence in
 this file (the two-word phrase occurs once on the pre-write blob and that single
 hit is an earlier pass's own sentence *claiming* the count is zero, so the
@@ -50,10 +50,10 @@ main suite); `docs:N` = `docs/routstr-delist.md`.
 
 Verification performed this pass (all hermetic; scratch outside `/tmp`): the
 script, both suites and the stand-in doc read end-to-end; a fresh probe,
-`docs/reviews/routstr_f13_probes/probe_f13_pass25.py`, exercising **206 checks**
+`docs/reviews/routstr_f13_probes/probe_f13_pass26.py`, exercising **227 checks**
 (A citation audit, B safety, C confirmation, D fail-safe, E review-record
 integrity) executed **twice with byte-identical transcript sha256
-`aef0abd1859b77a022dc91bab2d39692091a82f1c0de39299d8812eab2af0f12` → 206/206 PASS**, zero FAIL lines; repo suite
+`f117510f2a58ccfa0ecc17efb11ca5b27e9d05b26ef7d223b682cf66b009f2ea` → 227/227 PASS**, zero FAIL lines; repo suite
 `python3 -m pytest tests/test_routstr_delist.py tests/test_routstr_delist_contract.py -q`
 → **121 passed** (96 main + 25 contract); deployed suite
 `cd ~/.hermes/bot && python3 -m pytest tests/test_routstr_delist.py -q` →
@@ -67,10 +67,10 @@ node and reads the *emitted* strings, rather than walking `ast.Constant` nodes:
 the mutating `UPDATE`s live inside f-strings (`ast.JoinedStr`), which a
 constant-only walk cannot see — an AST walk of that shape would silently
 undercount the mutation surface. This is the same payload-level measurement the
-prior passes keep. The pre-write probe run (against the twenty-fourth revision)
+prior passes keep. The pre-write probe run (against the twenty-fifth revision)
 reported the expected single FAIL on `E:ordinal-preamble` (the file still said
-twenty-fourth); that is the pre-write baseline, not a defect, and this pass's
-post-write run is 206/206. Citing this because a verifier that hides its own
+twenty-fifth); that is the pre-write baseline, not a defect, and this pass's
+post-write run is 227/227. Citing this because a verifier that hides its own
 bug is worse than none.
 
 ---
