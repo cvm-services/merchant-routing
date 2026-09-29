@@ -1,4 +1,4 @@
-# Findings 1–3 Review: routstr_delist — forty-fifth independent offload pass
+# Findings 1–3 Review: routstr_delist — forty-sixth independent offload pass
 
 Scope (per the original task): finding 1 safety (delisting the routstr SALE
 must never disable the routstr provider or touch the T470 flat-router ladder),
@@ -17,17 +17,16 @@ HIGH.** A read of the exact path returns file-not-found (re-measured this
 pass), the `~/.hermes/bot/docs/` directory listing holds only
 `routstr-delist.md` plus `reviews/` (re-measured this pass), and the probe
 re-asserts the absence (`E:contract-path-missing`). **Disclosed deviation:**
-an UNSCOPED `find` over the repo root (which spans this repo's ~19 G
-`evidence/` tree) exceeded the 180 s tool timeout this pass — the same
-class of unbounded sweep the 42nd pass hit on the bot tree — and was not
-retried; the scoped re-measurement (`git ls-files` over tracked files, plus
-`find` over `docs`, `src`, `tests`, `scripts` and the bot's `docs`,
-`scripts`, `tests` directories) returns only
-`tests/test_routstr_delist_contract.py`, a differently-named pytest suite,
-not the missing contract doc. Absence therefore rests on the exact path's
-ENOENT, the docs-directory listing, the scoped sweep, and the probe check,
-not on a completed unbounded sweep. The stand-in
-`~/.hermes/bot/docs/routstr-delist.md` (197 lines, md5
+unscoped `find` sweeps (over the bot tree on the 42nd pass, over the repo
+root — which spans this repo's ~19 G `evidence/` tree — on the 45th) exceeded
+the 180 s tool timeout, so this pass did not attempt one; the scoped
+re-measurement (`git ls-files` over tracked files, plus `find` over `docs`,
+`src`, `tests`, `scripts` and the bot's `docs`, `scripts`, `tests`
+directories) returns only `tests/test_routstr_delist_contract.py`, a
+differently-named pytest suite, not the missing contract doc. Absence
+therefore rests on the exact path's ENOENT, the docs-directory listing, the
+scoped sweep, and the probe check, not on a completed unbounded sweep. The
+stand-in `~/.hermes/bot/docs/routstr-delist.md` (197 lines, md5
 `e385af98b9c142eec736672d4dcca290`, byte-identical to repo
 `docs/routstr-delist.md`) fills the contract role and was read end-to-end
 this pass. This is an artifact-provisioning defect, deliberately reported
@@ -37,11 +36,11 @@ it is not a defect in the script or its tests.
 **Duplicate-dispatch disclosure.** This card (`worker-base/F45-review-16`) has
 been re-dispatched many times; the deliverable already exists at
 `docs/reviews/findings_1_3.md` (creating commit `11e40f9`, `git log
---diff-filter=A`) and its last committed revision is the 44th (`28a5815`, md5
-`bf1aeee78b2a57305dbf8d515cc37c0a`, 397 lines / 25 441 B). `git log --oneline
--- <path> | wc -l` → **62** touches (measured this pass pre-write). This pass
+--diff-filter=A`) and its last committed revision is the 45th (`3402cc1`, md5
+`5c51c61689ecc836a0f81506a47506fa`, 406 lines / 25 880 B). `git log --oneline
+-- <path> | wc -l` → **63** touches (measured this pass pre-write). This pass
 found the working copy **committed-clean**: worktree == HEAD blob == bot
-mirror, all `bf1aeee7…` (measured). The file's own convention — and this
+mirror, all `5c51c616…` (measured). The file's own convention — and this
 card's acceptance criterion — is exactly three `## Finding` sections, so every
 prior pass **rewrote** the file in place rather than appending a §N section.
 This pass does the same: it re-derives the three findings from the current
@@ -64,40 +63,39 @@ probe clone, committed with the deliverable), the pre-write
 committed-clean.
 
 Ordinal convention: the last *committed* revision titled itself the
-*forty-fourth* independent offload pass (`28a5815`), so this pass is the
-**forty-fifth** by that (the file's own preamble) convention. The other
+*forty-fifth* independent offload pass (`3402cc1`), so this pass is the
+**forty-sixth** by that (the file's own preamble) convention. The other
 candidate ordinal tokens are **inapplicable, not merely zero**, and were
 re-measured this pass against the PINNED pre-write blob (`git show
-28a5815:<path>`, md5 `bf1aeee7…`), not against the live file which this prose
-itself perturbs: `fleet offload queue` → 1, `fleet offload` → 2 (one
-occurrence inside the `fleet offload queue` list entry, one as its own
-entry), `offload queue` → 1, `offload-note` → 1, `independent offload
-pass` → 3 — in the 44th blob every queue-token hit sits inside that
-revision's own backticked token list (its version of this very paragraph),
-and each `independent offload pass` hit is the title, that list, or the
-sentence naming the 44th's title: every count is self-referential and none
-can be keyed on as a dispatch counter. The operative integer is line 1's
+3402cc1:<path>`, md5 `5c51c616…`), not against the live file which this prose
+itself perturbs: `fleet offload queue` → 2, `fleet offload` → 3,
+`offload queue` → 3, `offload-note` → 1, `independent offload pass` → 3 —
+in the 45th blob every queue-token hit sits inside that revision's own
+backticked token list or its parenthetical (its version of this very
+paragraph), and each `independent offload pass` hit is the title, the list,
+or the sentence naming the 45th's title: every count is self-referential and
+none can be keyed on as a dispatch counter. The operative integer is line 1's
 ordinal word, which the probe's `E:ordinal-preamble` check asserts directly.
 
 Verification performed this pass (all hermetic; scratch off `/tmp`, on
 `/dev/shm`): the script (829 lines), both suites and the stand-in doc read
 end-to-end; the probe for this pass,
-`docs/reviews/routstr_f13_probes/probe_f13_pass45.py` (592 lines, md5
-`2196008275d9e443ee72ab3136330de5`), cloned from the 44th pass's probe with
+`docs/reviews/routstr_f13_probes/probe_f13_pass46.py` (592 lines, md5
+`58264ad5410f9cb2539f12d5d773ba8c`), cloned from the 45th pass's probe with
 a measured four-hunk delta only (docstring header, PRE-leg note, `SCRATCH`
-→ `/dev/shm/f13-pass45`, and the ordinal literal), exercising **238 checks**
+→ `/dev/shm/f13-pass46`, and the ordinal literal), exercising **238 checks**
 (A citation audit ×130 + 11 structural A checks, B safety ×32, C confirmation
 ×25, D fail-safe ×35, E review-record integrity ×5). A PRE-write run of the
-probe against the 44th revision read **237/238**, its single FAIL being
-`E:ordinal-preamble` (the file still carried the 44th title), with transcript
+probe against the 45th revision read **237/238**, its single FAIL being
+`E:ordinal-preamble` (the file still carried the 45th title), with transcript
 sha256 `eec3a1ee9528de5f7da44e8483afa467b6ffc11f60596f155c4a9bfc06b50ae0`
 reproduced byte-identically across two consecutive runs — and byte-equal to
-the 42nd, 43rd and 44th passes' own recorded PRE digests, because the boolean
+the 42nd through 45th passes' own recorded PRE digests, because the boolean
 vector is unchanged: no artifact and no finding body moved between those
 passes. The POST-write run reads **238/238**, zero FAIL lines, transcript
 sha256 `0ad49bcb4f77f3956663c4c86a82621ca90bcd48880edec85e70756e23e0f1e4`
 reproduced byte-identically across two consecutive runs (likewise byte-equal
-to the 42nd through 44th passes' POST digests, for the same reason). The
+to the 42nd through 45th passes' POST digests, for the same reason). The
 ordinal check is POST-only by construction (it asserts line 1's ordinal
 word), so the pre-write FAIL is expected and disclosed, not a defect. The
 repo file is then mirrored byte-for-byte to
@@ -108,29 +106,30 @@ re-measured equal after the copy.
 digest `f5d9ec89…` was its PRE-write transcript (the ordinal check reading 0),
 not its POST-write digest; the two differ by exactly the ordinal bit. For a
 fixed check set the POST transcript is invariant across passes (demonstrated
-again this pass: the 42nd through 45th POST digests are byte-equal), so the
+again this pass: the 42nd through 46th POST digests are byte-equal), so the
 historical digits are recorded as history only — the acceptance runs are
 this pass's own POST transcript.
 
 Suite runs (this host's `os.fsync` can stall, so the main suite was run
 ALONE, not beside the contract suite) — all with `TMPDIR` off this host's
 `/tmp` tmpfs: repo main `python3 -m pytest tests/test_routstr_delist.py -q`
-→ **96 passed** (13.51 s pytest-reported — this host's `fsync` variance
+→ **96 passed** (4.86 s pytest-reported — this host's `fsync` variance
 swings wall time between runs); repo contract `python3 -m pytest
-tests/test_routstr_delist_contract.py -q` → **25 passed** (1.90 s); the
+tests/test_routstr_delist_contract.py -q` → **25 passed** (0.29 s); the
 byte-identical deployed bot copy `~/.hermes/bot/tests/test_routstr_delist.py`
-→ **25 passed** (21.78 s); repo total 96 + 25 = **121 passed**.
+→ **25 passed** (1.17 s); repo total 96 + 25 = **121 passed**.
 Point-in-time environment snapshot (`df -h` / `df -B1`, re-measured this
-pass): `/tmp` 46 % — 2 661 892 096 B of 5 867 642 880 B; `/dev/shm` 1 % —
-5 570 560 B used; `/` 95 % — 452 129 996 800 B of 501 809 635 328 B. These
+pass): `/tmp` 46 % — 2 661 601 280 B of 5 867 642 880 B; `/dev/shm` 1 % —
+6 189 056 B used; `/` 96 % — 453 663 973 376 B of 501 809 635 328 B. These
 are volatile snapshots of a live host — re-measure, never carry them
 forward. Timings likewise.
 
-Operational note: no `.git/index.lock` was present this pass at commit time
-(`ls` ENOENT measured immediately before `git add`; the 35th, 38th and 42nd
-passes each contended with a stale one). The task body says "do not push
-unless instructed in the task body" and carries no push clause, so this pass
-commits locally only (precedent: the 38th through 44th passes).
+Operational note: no `.git/index.lock` was present this pass at entry
+(`stat` ENOENT measured before the build; re-measured immediately before
+`git add`; the 35th, 38th and 42nd passes each contended with a stale one).
+The task body says "do not push unless instructed in the task body" and
+carries no push clause, so this pass commits locally only (precedent: the
+38th through 45th passes).
 
 **Disclosed probe deviations (artifact correct in every case).** Section B
 re-executes the module's real payload builders against a live two-table
