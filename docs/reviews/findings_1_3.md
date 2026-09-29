@@ -1,4 +1,4 @@
-# Findings 1–3 Review: routstr_delist — thirty-third independent offload pass
+# Findings 1–3 Review: routstr_delist — thirty-fourth independent offload pass
 
 Scope (per the original task): finding 1 safety (delisting the routstr SALE must
 never disable the routstr provider or touch the T470 flat-router ladder),
@@ -27,19 +27,19 @@ defect in the script or its tests.
 been re-dispatched many times; the deliverable already exists at
 `docs/reviews/findings_1_3.md` (creating commit `11e40f9`, `git log
 --diff-filter=A`) and is committed-clean. `git log --oneline -- <path> | wc -l`
-→ **51** touches (measured this pass; 50 at the 32nd). Its own convention — and
+→ **52** touches (measured this pass; 51 at the 33rd). Its own convention — and
 this card's acceptance criterion — is exactly three `## Finding` sections
-(`grep -c '^## '` → 3, re-asserted this pass by probe E:exactly-three-findings),
+(`grep -c '^## Finding '` → 3, re-asserted this pass by probe E:exactly-three-findings),
 so every prior pass **rewrote** the file in place rather than appending a §N
 section. This pass does the same: it re-derives the three findings from the
 current artifacts, whose md5s were measured unchanged this pass (`2ea724ef…`,
 `031851b356…`, `e385af98…` — not assumed). Ordinal convention: the immediately
-prior revision titled itself the *thirty-second* independent offload pass and
-committed as `91f6845`; this pass is therefore the **thirty-third** by that (the
+prior revision titled itself the *thirty-third* independent offload pass and
+committed as `d696f88`; this pass is therefore the **thirty-fourth** by that (the
 file's own preamble) convention. The pre-write baseline this pass replaces is
-that 32nd blob: `git show 91f6845:docs/reviews/findings_1_3.md | md5sum` →
-`94d84e288ba8033a7befc5d9db4115f4`, byte-equal to the working file before the
-rewrite (measured, not carried from the 32nd pass's prose). **Result of the
+that 33rd blob: `git show d696f88:docs/reviews/findings_1_3.md | md5sum` →
+`6b1f1bd9b41d0c56abc70c64d9fb24e1`, byte-equal to the working file before the
+rewrite (measured, not carried from the 33rd pass's prose). **Result of the
 re-derivation: the finding vector is unchanged.** All 120 `A:` citation checks
 pass byte-exactly against the live blobs (every `path:N` reference in the three
 finding bodies below). No severity moved: F1 **OK** with LOW ×3; F2 **OK** with a
@@ -53,25 +53,23 @@ deployed suite, byte-identical to `~/.hermes/bot/tests/test_routstr_delist.py`);
 
 Verification performed this pass (all hermetic; scratch off `/tmp`): the script,
 both suites and the stand-in doc read end-to-end; a fresh probe for this pass,
-`docs/reviews/routstr_f13_probes/probe_f13_pass33.py` (cloned from the pass-32
+`docs/reviews/routstr_f13_probes/probe_f13_pass34.py` (cloned from the pass-33
 probe with `SCRATCH` re-pointed and the ordinal assertion re-parameterised; the A
 citation audit re-asserts each cited line by substring, and B/C/D/E re-execute
 the module's real payloads and CLI paths against hermetic fakes), exercising
 **198 checks** (A citation audit ×120, B safety ×30, C confirmation ×16, D
 fail-safe ×28, E review-record integrity ×4), executed **twice with
 byte-identical transcript sha256
-`f5d9ec89a402a5ae1cb43e47fef163bb3f5048341a310de3dfb4361a876e74d1` → 198/198
+`55e95221c9c8129fb9d2c374aabf740a93f5c07a0a67fb83a926f6b31de67084` → 198/198
 PASS**, zero FAIL lines. A pre-write run of the same probe read `197/198` with
-its single FAIL being `E:ordinal-preamble` (the file still carried the 32nd
-pass's title) — expected and disclosed, not a defect: the ordinal check is
-POST-only by construction. **Correction to the prior pass's prose:** the 32nd
-pass reported its sections as `A×122 … D×26`; re-measured this pass (the probe
-now prints a per-section tally) they are **A=120, D=28** — the earlier figures
-were a miscount, the check total (`198`) was right. The repo main suite run
-alone (this host's `os.fsync` can stall, so the suite was not run beside the
-contract suite) → `python3 -m pytest tests/test_routstr_delist.py -q` → **96
-passed in 254.11 s**; the repo contract suite `python3 -m pytest
-tests/test_routstr_delist_contract.py -q` → **25 passed in 41.13 s**
+its single FAIL being `E:ordinal-preamble` (the file still carried the 33rd
+pass's title; transcript sha256 `f5d9ec89…`) — expected and disclosed, not a
+defect: the ordinal check is POST-only by construction, and the vector of the
+120 `A:` citation checks is byte-identical pre- and post-retitle. The repo main
+suite run alone (this host's `os.fsync` can stall, so the suite was not run beside
+the contract suite) → `python3 -m pytest tests/test_routstr_delist.py -q` → **96
+passed in 8.09 s**; the repo contract suite `python3 -m pytest
+tests/test_routstr_delist_contract.py -q` → **25 passed in 2.60 s**
 (byte-identical to the deployed bot copy, so the repo total is 96 + 25 =
 **121 passed**); all runs with `TMPDIR` off this host's `/tmp` tmpfs (measured
 44 % used this pass: 2.4 G of 5.5 G).
