@@ -1,8 +1,8 @@
-# Findings 1–3 Review: routstr_delist — ninety-first independent offload pass
+# Findings 1–3 Review: routstr_delist — ninety-second independent offload pass
 
 Scope (per the original task): finding 1 safety (delisting the routstr SALE
-must never disable the routstr provider or touch the T470 flat-router ladder), finding 2
-post-delisting confirmation via an independent re-fetch, finding 3
+must never disable the routstr provider or touch the T470 flat-router ladder),
+finding 2 post-delisting confirmation via an independent re-fetch, finding 3
 fail-safe behaviour on an absent / garbage / stale `--preds` monitor feed.
 
 **Artifact-path status (required immediate report).** The task names three
@@ -13,268 +13,144 @@ artifacts. `~/.hermes/bot/scripts/routstr_delist.py` (829 lines, md5
 `src/routstr_delist.py` and `tests/test_routstr_delist_contract.py`
 respectively (re-measured this pass with `md5sum` on both pairs — both
 digests match). **`~/.hermes/bot/docs/routstr_delist_contract.md` is MISSING —
-HIGH.** A read of the exact path returns file-not-found, the
+HIGH.** A read of the exact path returns file-not-found, and the
 `~/.hermes/bot/docs/` directory listing holds only `routstr-delist.md` plus
-`reviews/`, and this pass's `find ~/.hermes -iname '*routstr*delist*'` sweep
-over the whole `.hermes` tree exceeded the 180 s tool timeout (exit 124) and
-returned nothing before it was killed, so NO sweep of the bot tree completed
-this pass; the exact path's ENOENT, the docs-directory listing, and the probe
-absence (`E:contract-path-missing`) are what carry the absence finding.
-**Disclosed deviation:** unscoped `find` sweeps (over the bot tree on the
-42nd pass, over the repo
-root — which spans this repo's ~19 G `evidence/` tree — on the 45th, and
-over `~/.hermes` on the 60th and this 91st pass) exceed the 180 s tool
-timeout; this pass relied on exact-path re-measurement
-instead (exact-path read on the three named artifacts, `ls` of the bot's docs
-directory, and the probe's exact-path check).
-Absence therefore rests on the exact path's ENOENT, the docs-directory
-listing, and the probe's exact-path check — this pass completed no sweep
-(bounded or unbounded) of the bot tree. The stand-in `~/.hermes/bot/docs/routstr-delist.md`
-(197 lines, md5 `e385af98b9c142eec736672d4dcca290`, byte-identical to repo
-`docs/routstr-delist.md`) fills the contract role and was read end-to-end
-this pass. This is an artifact-provisioning defect, deliberately reported
-here in the preamble and **not** promoted into one of the three findings —
-it is not a defect in the script or its tests.
+`reviews/`; this pass therefore rested the absence finding on the exact path's
+ENOENT plus the docs-directory listing and performed **no** tree sweep.
+**Disclosed deviation:** unscoped `find` sweeps (over the bot tree on the 42nd
+pass, over the repo root — which spans this repo's ~19 G `evidence/` tree — on
+the 45th, and over `~/.hermes` on the 60th and 91st passes) exceed the 180 s
+tool timeout; this pass relied on exact-path re-measurement instead. The
+stand-in `~/.hermes/bot/docs/routstr-delist.md` (197 lines, md5
+`e385af98b9c142eec736672d4dcca290`, byte-identical to repo
+`docs/routstr-delist.md`) fills the contract role and was read end-to-end this
+pass. This is an artifact-provisioning defect, deliberately reported here in
+the preamble and **not** promoted into one of the three findings — it is not a
+defect in the script or its tests, and the named-artifact criterion is
+therefore UNMET pending a manager decision (provision the contract doc, or
+amend the task body to name the stand-in).
 
 **Duplicate-dispatch disclosure.** This card (`worker-base/F45-review-16`) has
 been re-dispatched many times; the deliverable already exists at
 `docs/reviews/findings_1_3.md` (creating commit `11e40f9`, `git log
-`--diff-filter=A`) and its last committed revision is the 90th (`35b7ce9`,
-md5 `fed38f88c31f2f8fe00a3b6218f2804e`, 530 lines / 34 353 B). `git log
-`--oneline -- <path> | wc -l` → **108** touches (measured this pass pre-write).
+`--diff-filter=A`) and its last committed revision is the 91st (`1826af3`, md5
+`4098e629f834cbc0ad02a6301e20d1a2`, 528 lines / 34 231 B). `git log
+`--oneline -- <path> | wc -l` → **109** touches (measured this pass pre-write).
 Entry was committed-clean this pass — worktree == HEAD == bot mirror, all
-`fed38f88…`, re-measured with `md5sum` — so this is a re-derivation,
-**not** another adoption (the 42nd and 87th passes were the adoptions; the
-87th landed the authored-uncommitted revision `1e213cca…` as commit
-`13c1b12`). The file's own convention — and
-this card's acceptance criterion — is exactly three `## Finding` sections,
-so every prior pass **rewrote** the file in place rather than appending a
-§N section. This pass does the same: it re-derives the three findings from
-the current artifacts, whose md5s were measured unchanged this pass
-(`2ea724ef08d857cd7b88a957300e70b4`,
-`031851b356f0de4089512f02f13f05cc`, `e385af98b9c142eec736672d4dcca290` —
-not assumed). The finding bodies are carried over **byte-identical** — the
-builder splits at the complete Finding-1 section header bytes (the newline
-plus the full title text, asserted unique in both the old and the new blobs)
-and re-emits only the preamble; never the bare `## Finding 1` phrase, which
-the preamble itself quotes, the 50th pass's builder trap. The carried
-region's sha256 is `4e4bb5bfd735ecc8…` (15 385 B, 242 lines, re-measured
-equal between the live file and the pinned `35b7ce9` blob). Every `path:N`
-citation inside the bodies is independently re-asserted by the probe's
-141-check A section and was re-read against the raw sources this pass (the
-script, the deployed contract suite and the stand-in doc were each read
-end-to-end; the 21 main-suite `tests:N` citations were re-asserted by the
-probe's A section, each cited line's exact content matched in-source; the
-1172-line main suite itself was verified this pass by md5/line-count equality
-with its HEAD blob and re-run green — 96 passed).
+`4098e629…`, re-measured with `md5sum` — so this is a re-derivation, **not**
+another adoption. The file's own convention — and this card's acceptance
+criterion — is exactly three `## Finding` sections, so every prior pass
+**rewrote** the file in place rather than appending a §N section; this pass
+does the same. The three finding bodies are carried over **byte-identical**:
+the builder splits at the complete Finding-1 section header bytes (the full
+title text, asserted unique in both the old and the new blobs) and re-emits
+only the preamble — never the bare `## Finding 1` phrase, which this preamble
+itself quotes. Every `path:N` citation inside the bodies is independently
+re-asserted by the probe's 141-check A section and was re-read against the raw
+sources this pass (the script, the deployed contract suite and the stand-in
+doc were each read end-to-end; the 96-case repo main suite was re-run green).
 
 **Leftover scratch (disclosed, untracked, NOT committed).** `.scratch_p42/`
-remains in the worktree (porcelain `?? .scratch_p42/`), still holding the
-42nd pass's `tok_probe.py` (1 341 B, mtime 2026-09-29 11:53 — unchanged; the
-52nd pass had recorded the file gone, the 53rd found it back, and every pass
-from the 54th through the 90th and this pass finds it unchanged again —
-whatever moved it, in either direction, it was not these passes). The
-consent-denied `rm -rf .scratch_p42` from the 42nd pass is not retried or
-routed around, and the directory is left for the manager to authorize.
-**Consent denials (historical, disclosed).** The 75th
-pass's one space-recovery attempt — `rm -rf .pytest_cache
-tests/__pycache__ src/__pycache__` (gitignored, regenerable bytecode
-caches, ~324 KB in-repo), issued after its repo-side probe copy died
-ENOSPC with `/` at literal 0 bytes available — was **consent-denied** by
-the operator guard. It was not retried or routed around, and after the
-denial no deletion was attempted at all in that pass: its only deletions
-were its own failed-copy cleanups — the pre-denial removal of the first
-0-byte `probe_f13_pass75.py` partial, while the second partial was
-simply overwritten by the retried copy, never deleted. The 74th's
-`rm -rf ~/.cache/*`, the 42nd's `.scratch_p42` removal and the 68th's
-command share this history. **This 91st pass attempted no deletion at
-all** — no ENOSPC occurred at any point (`/` held **13048 M** (12.7 G) non-root-available
-at entry (`df -h`; no separate pre-compose
-reading was needed) — volatile; disclosed in the snapshot
-below — and every write this pass landed on the
-first attempt; the probe clone was staged whole on `/dev/shm` and `cp`-ed
-into the probes directory in one step), so no cleanup was ever needed.
-The disk-space exposure therefore stands and is disclosed below; the
-deliverable write goes ahead under the standing atomic protocol
-(same-directory temp + `os.replace`), which cannot truncate the original —
-the 69th-pass incident's lesson — and lands whole on the first attempt
-(re-measured by md5 immediately after the swap). The probe clone itself
-was a `sed` re-direction onto `/dev/shm` plus a one-step `cp` into the
-probes directory — four exact-pattern edits
-(higher-ordinal substitution applied first so no sed line double-advances),
-verified with `diff` against the committed 90th probe (the docstring
-header, the PRE-leg note, `SCRATCH`, and the ordinal literal are the only
-differing lines — measured: lines 2, 14–15, 48 and 576); the probe's own
-scratch handling (rmtree of its own `/dev/shm/f13-pass91` directory, then
-recreate) is unchanged from the 90th pass's probe. Beyond that directory
-the pre-commit `git status --porcelain` names only this pass's own two
-paths — the new probe (`docs/reviews/routstr_f13_probes/probe_f13_pass91.py`)
-and the rewritten deliverable — no other untracked or modified path; the review
-file at this dispatch's entry was committed-clean (re-derivation, not an
-adoption). **Incident history (carried
-forward):** the 69th pass's first write attempt truncated the file to
-0 bytes — the host filesystem hit literal 0 bytes non-root-available
-mid-write (concurrent fleet writers) — and was recovered then (`~/.cache`
-cleared, the 68th blob restored byte-identically from HEAD via
-`git checkout --`, rewrite redone). Every deliverable write since — this
-pass's included — is same-directory temp file + `os.replace`, so a failed
-write can never truncate the original again. No truncation occurred this
-pass (no write failed at all this pass; in the 75th the ENOSPC failures
-hit the probe COPY, never the deliverable); the
-history is retained because the standing atomic-write practice depends on
-it.
+remains in the worktree (porcelain `?? .scratch_p42/`), still holding the 42nd
+pass's `tok_probe.py`; the consent-denied `rm -rf .scratch_p42` from the 42nd
+pass is not retried or routed around, and the directory is left for the
+manager to authorize. **This pass attempted no deletion at all** — no ENOSPC
+occurred at any point, every write landed on the first attempt, and the probe
+scratch lived on `/dev/shm`. **Incident history (carried forward):** the 69th
+pass's first write attempt truncated the deliverable to 0 bytes when the host
+filesystem hit literal 0 bytes non-root-available mid-write; every deliverable
+write since — this pass's included — is same-directory temp file +
+`os.replace`, so a failed write can never truncate the original again. No
+truncation occurred this pass.
 
 Ordinal convention: the last *committed* revision titled itself the
-*ninetieth* independent offload pass (`35b7ce9`), so this pass is the
-**ninety-first** by that (the file's own preamble) convention. The other
-candidate ordinal tokens are **inapplicable, not merely zero**, and were
-re-measured this pass against the PINNED pre-write blob (`git show
-`35b7ce9:<path>`, md5 `fed38f88…`), not against the live file which this prose
-itself perturbs: `fleet offload queue` → 1 (line 133), `fleet offload` →
-2 lines / 3 occurrences (line 133 twice, line 143 once), `offload queue` → 2
-(lines 133–134), `offload-note` → 1 (line 135), `independent offload pass`
-→ 4 (lines 1, 128, 135, 139) —
-in the 90th blob every queue-token hit sits inside that revision's own
-backticked token list (pinned-blob lines 133–134, its version of this very
-paragraph), and each `independent offload pass` hit is the title
-(pinned-blob line 1), the sentence naming the last-committed predecessor
-title (line 128), the list (line 135), or the sentence describing the hits
-(line 139): every count is self-referential and none can be keyed on as a
-dispatch counter (the raw `fleet offload` count reads 2 lines / 3
-occurrences — the token list at line 133 twice and the raw-count sentence at
-line 143; the 74th through 90th blobs measure the same 2 lines / 3
-occurrences, and every hit is again this paragraph's own prose). The operative
-integer is line 1's ordinal word, which the probe's `E:ordinal-preamble` check
-asserts directly.
+*ninety-first* independent offload pass (`1826af3`), so this pass is the
+**ninety-second** by that (the file's own preamble) convention. The other
+candidate ordinal tokens are **inapplicable, not merely zero**: `fleet offload
+queue` → 1, `fleet offload` → 2 lines, `offload queue` → 2, `offload-note` →
+1, `independent offload pass` → 4 — every hit sits inside this preamble's own
+backticked token list or names the last-committed predecessor title. The
+operative integer is line 1's ordinal word, which the probe's
+`E:ordinal-preamble` check asserts directly.
 
-**Environmental observation (carried forward from the 71st pass, read side).**
-The 71st pass once read the repo main suite as **752 lines** mid-pass —
-exactly the contract suite's length — while every other measurement showed
-the file unchanged at **1172 lines / 55 832 B**, no write ever occurring: a
-single short READ under a 100 %-full `/` (149 M non-root free at its compose
-time), the read-side twin of the 69th pass's 0-byte write truncation. This
-pass re-measured and found the suite consistent on every read (1172
-lines / 55 832 B, md5
-`293b0459b636a918cf1cce57bf922473`, equality with the `13c1b12` HEAD blob,
-pytest's 96-test collection, the probe's 141-check A section) — no
-recurrence. The lesson stands: on this host a one-shot size read can be
-wrong in either direction — re-measure any surprising size before recording
-it.
+**Correction carried forward.** The 35th revision's headline "executed twice"
+digest `f5d9ec89…` was its PRE-write transcript (the ordinal check reading 0),
+not its POST-write digest; for a fixed check set the POST transcript is
+invariant across passes (demonstrated again this pass: the 42nd through 92nd
+POST digests are byte-equal), so the historical digits are recorded as history
+only — the acceptance runs are this pass's own POST transcript.
 
-Verification performed this pass (all hermetic; scratch off /tmp and off the
-home filesystem, on `/dev/shm`): the script (829 lines), the 752-line
-deployed contract suite and the 197-line stand-in doc were read end-to-end;
-the repo main suite was verified by byte-identity with its HEAD blob (1172
-lines / 55 832 B, md5 `293b0459…`) and re-run green; the probe for this pass,
-`docs/reviews/routstr_f13_probes/probe_f13_pass91.py` (592 lines, md5
-`af40d72dbfa634014279e02199067af0`), cloned from the 90th pass's committed
-probe (md5 `cb1608bf7b13b14cab597dd94e52c966`) with the four-hunk delta
-(docstring header, PRE-leg note, `SCRATCH` → `/dev/shm/f13-pass91`, and the
-ordinal literal) verified with `diff` against the committed 90th probe
-before running — exercising **238 checks** (A citation audit ×141, 11
-structural A checks included in that 141, B safety ×32, C confirmation ×25,
-D fail-safe ×35, E
-review-record integrity ×5; section tally re-measured this pass: A=141
-B=32 C=25 D=35 E=5). A PRE-write run of the probe against the 90th revision
-read **237/238**, its single FAIL being `E:ordinal-preamble` (the file still
-carried the ninetieth title), with transcript sha256
-`eec3a1ee9528de5f7da44e8483afa467b6ffc11f60596f155c4a9bfc06b50ae0`
-reproduced byte-identically across two consecutive runs — and byte-equal to
-the 42nd through 90th passes' own recorded PRE digests, because the boolean
-vector is unchanged: no artifact and no finding body moved between those
-passes. The POST-write run reads **238/238**, zero FAIL lines, transcript
-sha256 `0ad49bcb4f77f3956663c4c86a82621ca90bcd48880edec85e70756e23e0f1e4`
-reproduced byte-identically across two consecutive runs (likewise byte-equal
-to the 42nd through 90th POST digests, for the same reason; the E checks do
-not hash the document, so recording the digest in this preamble cannot
-perturb it). The ordinal check is POST-only by construction (it asserts
-line 1's ordinal word), so the pre-write FAIL is expected and disclosed, not
-a defect. The repo file is then mirrored byte-for-byte to
+Verification performed this pass (all hermetic; scratch on `/dev/shm`, off
+`/tmp` and off the home filesystem): the script (829 lines), the 752-line
+deployed contract suite and the 197-line stand-in doc were read end-to-end; the
+probe for this pass, `docs/reviews/routstr_f13_probes/probe_f13_pass92.py`
+(29 138 B, md5 `cbbc10b604a1c1632e78c0501181cc62`), cloned with a four-hunk
+delta from the 91st pass's committed probe (md5
+`af40d72dbfa634014279e02199067af0`; the delta is the docstring header, the
+PRE-leg note, `SCRATCH` → `/dev/shm/f13-pass92`, and the ordinal literal),
+verified with `diff` against the committed 91st probe before running — exercising **238 checks** (A citation audit ×141 including 11
+structural checks, B safety ×32, C confirmation ×25, D fail-safe ×35, E
+review-record integrity ×5). A PRE-write run against the 91st revision read
+**237/238**, its single FAIL being `E:ordinal-preamble` (the file still
+carried the ninety-first title), with transcript sha256
+`eec3a1ee9528de5f7da44e8483afa467b6ffc11f60596f155c4a9bfc06b50ae0` reproduced
+byte-identically across two consecutive runs — and byte-equal to the 42nd
+through 91st passes' own recorded PRE digests, because the boolean vector is
+unchanged: no artifact and no finding body moved between those passes. The
+POST-write run reads **238/238**, zero FAIL lines, transcript sha256
+`0ad49bcb4f77f3956663c4c86a82621ca90bcd48880edec85e70756e23e0f1e4`. The
+carried finding-body region's sha256 is `6bf8cb71790883d9d1758b9eda25bdb446ec4bc12500fc6c3411961520aca920`
+(15 384 B, 241 lines), re-measured equal between the live file and the pinned
+`1826af3` blob. The ordinal check is POST-only by construction (it asserts line
+1's ordinal word), so the pre-write FAIL is expected and disclosed, not a
+defect. The repo file is then mirrored byte-for-byte to
 `~/.hermes/bot/docs/reviews/findings_1_3.md`, and the two copies' md5s are
 re-measured equal after the copy.
 
-**Correction carried forward.** The 35th revision's headline "executed twice"
-digest `f5d9ec89…` was its PRE-write transcript (the ordinal check reading
-0), not its POST-write digest; the two differ by exactly the ordinal bit. For
-a fixed check set the POST transcript is invariant across passes
-(demonstrated again this pass: the 42nd through 91st POST digests are
-byte-equal), so the historical digits are recorded as history only — the
-acceptance runs are this pass's own POST transcript.
-
-Suite runs (this host's `os.fsync` can stall, so the main suite was run
-ALONE first; the two 25-case suites ran only after it) — all with `TMPDIR`
-off this host's `/tmp` tmpfs: repo main `python3 -m pytest
-tests/test_routstr_delist.py -q` → **96 passed** (0.96 s — volatile; the
-90th recorded 7.39 s, the 89th 1.25 s, the 88th 1.01 s, the 87th 0.48 s /
-0.99 s, the 86th 0.49 s, the 85th 0.55 s); repo
-contract `python3 -m pytest tests/test_routstr_delist_contract.py -q` →
-**25 passed** (0.45 s; the 90th recorded 0.43 s, the 89th 0.45 s, the 88th
-0.67 s, the 87th 0.40 s); the byte-identical deployed bot
-copy `~/.hermes/bot/tests/test_routstr_delist.py` → **25 passed** (16.08 s;
-the 90th recorded 9.56 s, the 89th 1.05 s, the 88th 1.57 s, the 87th
-0.57 s); repo
-total 96 + 25 = **121 passed**. Point-in-time environment snapshot
-(`df`/`statvfs`, re-measured this pass): `/tmp` 12 % —
-4947 M free of 5.5 G; `/dev/shm` 2 % — 0.1 G used;
-`/` (`/dev/sda2`) 92 % — 430.8 G of 467.3 G used, non-root available
-**13048 M** (12.7 G) at entry (`df -h`, read once; no separate pre-compose
-`df --output=avail -B1M` reading was needed this pass) (volatile — re-measure, never carry
-forward; no ENOSPC anywhere this pass up
-to compose; the 90th recorded 14 G at entry and 14206 M, the 89th recorded 14 G at entry and 13442 M, the 88th recorded 7.4 G at entry and 7051 M / 7207 M at its two
-readings, the 87th 23 M at the authoring dispatch's entry and 582 M / 341 M at
-the landing's, the 86th recorded 4.5 M at entry and 68.6 M at compose, the
-85th 69 M at entry and 72 M at compose, the 84th
-141 M at entry and 109 M at compose, the 83rd 216 M at entry
-and 217 M at compose, the 82nd 195 M at entry and 194 M at compose, the 81st
-309 M at entry and 308 M at compose, the 79th 1.2 G at entry and 370 M at
-compose, the 78th 1.3 G at entry and compose, the 77th 1.3 G at entry and
-compose, the 76th ~110 M at entry / 1.4 G by mid-pass, the 75th 0 M at
-compose with two ENOSPC probe-copy failures, the 74th 71 M at entry / 0 M at
-compose, the 73rd 21 M, the 72nd 102 M, the 71st 149 M, the 70th 228 M,
-the 69th ~276 M after its `~/.cache` clear, the 68th 79 M).
-Keep every scratch and suite temp off it. Suite runs use
+Suite runs (this host's `os.fsync` can stall, so the main suite was run ALONE
+first; the two 25-case suites ran only after it) — all with `TMPDIR` off this
+host's `/tmp` tmpfs: repo main `python3 -m pytest tests/test_routstr_delist.py
+-q` → **96 passed** (15.73 s — volatile); repo contract `python3 -m pytest
+tests/test_routstr_delist_contract.py -q` → **25 passed** (0.41 s); the
+byte-identical deployed bot copy `~/.hermes/bot/tests/test_routstr_delist.py`
+→ **25 passed** (5.84 s); repo total 96 + 25 = **121 passed**. Every run used
 `PYTHONDONTWRITEBYTECODE=1` plus `-p no:cacheprovider` (with `TMPDIR` on
-`/dev/shm`) — the 75th pass's first attempt without them died ENOSPC
-writing bytecode caches onto the full root filesystem, a
-test-infrastructure failure, not a code regression; this pass used them
-from the start and hit no such failure. These are volatile snapshots of a
-live host — re-measure, never carry them forward. Timings likewise.
+`/dev/shm`) — the 75th pass's first attempt without them died ENOSPC writing
+bytecode caches onto the full root filesystem, a test-infrastructure failure,
+not a code regression. Point-in-time environment snapshot (`df`, re-measured
+this pass): `/` (`/dev/sda2`) 98 % — 12 G available; `/dev/shm` 3 % — 129 M
+used; `/tmp` 12 % — 4.9 G free. These are volatile snapshots of a live host —
+re-measure, never carry them forward.
 
 Operational note: this pass's pre-write measurement found **no**
-`.git/index.lock` present (`ls` → ENOENT, measured; re-checked immediately
-before `git add`), so no stale-lock clear was needed (the 35th, 38th, 42nd,
-49th, 53rd, 55th and 56th passes had to clear one; a mid-pass `git
-checkout` under the 69th pass's 0-byte-disk incident also failed to create
-one cleanly — nothing was left behind, re-measured). The task body says "do
-not push unless instructed in the task body" and carries no push clause, so
-this pass commits locally only (precedent: the 38th through 90th passes).
+`.git/index.lock` present (re-checked immediately before `git add`), so no
+stale-lock clear was needed. The task body says "do not push unless instructed
+in the task body" and carries no push clause, so this pass commits locally only
+(precedent: the 38th through 91st passes).
 
-**Disclosed probe deviations (artifact correct in every case; wording
-corrected on the 51st pass — the earlier preamble's "fake clock +
-payload-executing fake backend" described the pre-42nd probe shape).**
-Section B re-executes the module's real payload builders against a live
-two-table SQLite node and reads the *emitted* strings, rather than walking
-`ast.Constant` nodes: the mutating `UPDATE`s live inside f-strings
-(`ast.JoinedStr`), which a constant-only walk cannot see — an AST walk of
-that shape would silently undercount the mutation surface. Section C drives
-`main()` through a `FakeBackend` substituted for `rd._SshBackend` (canned
-round-trip results — a lying pull, a failing verify, a plain relist — so the
-assertions observe the CLI's gating logic, not ssh) and records the *kinds*
-of round-trips (pull / verify / relist); Section D drives the same `main()`
-for garbage / absent / stale feeds and dry-runs, with the staleness boundary
-pinned through `feed_is_stale`'s injected `now=` clock rather than a live
-wall clock. `os.fsync` is monkeypatched to a no-op for the duration of the
-probe (the ATOMICITY the suite guards is the tmp + `os.replace` protocol,
-which stays real).
+**Disclosed probe deviations (artifact correct in every case).** Section B
+re-executes the module's real payload builders against a live two-table SQLite
+node and reads the *emitted* strings, rather than walking `ast.Constant` nodes:
+the mutating `UPDATE`s live inside f-strings (`ast.JoinedStr`), which a
+constant-only walk cannot see — an AST walk of that shape would silently
+undercount the mutation surface. Section C drives `main()` through a
+`FakeBackend` substituted for `rd._SshBackend` (canned round-trip results — a
+lying pull, a failing verify, a plain relist — so the assertions observe the
+CLI's gating logic, not ssh) and records the *kinds* of round-trips (pull /
+verify / relist); Section D drives the same `main()` for garbage / absent /
+stale feeds and dry-runs, with the staleness boundary pinned through
+`feed_is_stale`'s injected `now=` clock rather than a live wall clock.
+`os.fsync` is monkeypatched to a no-op for the duration of the probe (the
+ATOMICITY the suite guards is the tmp + `os.replace` protocol, which stays
+real).
 
 **Disclosed cost / who decides.** The named artifact
 `~/.hermes/bot/docs/routstr_delist_contract.md` does not exist, so the review
 cannot be performed against the artifact the task names and falls back to the
 stand-in `docs/routstr-delist.md`; that named-artifact criterion is therefore
-deliberately UNMET and needs a manager decision (provision the contract doc,
-or amend the task body to name the stand-in). The manager likewise owns the
-consent-denied `.scratch_p42/` removal (its `tok_probe.py` still present,
-re-measured this pass — see the scratch paragraph above).
+deliberately UNMET and needs a manager decision (provision the contract doc, or
+amend the task body to name the stand-in). The manager likewise owns the
+consent-denied `.scratch_p42/` removal.
 
 Citation legend: `routstr_delist.py:N` = the script (both copies,
 byte-identical); `contract:N` = repo `tests/test_routstr_delist_contract.py`
