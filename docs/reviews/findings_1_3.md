@@ -1,4 +1,4 @@
-# Findings 1–3 Review: routstr_delist — one hundred and fortieth independent offload pass
+# Findings 1–3 Review: routstr_delist — one hundred and forty-first independent offload pass
 
 Scope (per the original task): finding 1 safety (delisting the routstr SALE
 must never disable the routstr provider or touch the T470 flat-router ladder),
@@ -23,7 +23,8 @@ ENOENT plus this pass's directory listing plus the prior passes' bounded
 **Disclosed deviation:** unscoped `find` sweeps (over the bot tree on the 42nd
 pass, over the repo root — which spans this repo's `evidence/` tree — on
 the 45th, over `~/.hermes` on the 60th, 91st and 93rd passes, and a
-`find /home/c03rad0r` probe-location sweep on the 139th) exceed the 180 s tool
+`find /home/c03rad0r` probe-location sweep on the 139th — the 140th and this 141st
+ran none) exceed the 180 s tool
 timeout; the timeout is a tool-layer limit, not evidence of absence. This pass
 ran no unscoped sweep at all — its contract-doc absence rests on the exact-path
 ENOENT (re-asserted
@@ -44,11 +45,11 @@ named-artifact criterion is therefore UNMET pending a manager decision
 **Duplicate-dispatch disclosure.** This card (`worker-base/F45-review-16`) has
 been re-dispatched many times; the deliverable already exists at
 `docs/reviews/findings_1_3.md` (creating commit `11e40f9`, `git log
-`--diff-filter=A`) and its last committed revision is the 139th (`fabf91a`,
-md5 `d7cd5fe758799f7de900bf91f093f0c7`, 678 lines / 45 072 B — this pass's entry
+`--diff-filter=A`) and its last committed revision is the 140th (`a907b80`,
+md5 `048479e187442cbaa68e78d2f14d9c3d`, 700 lines / 46 567 B — this pass's entry
 state, re-measured with `md5sum`). `git log`
-`--oneline -- <path> | wc -l` → **157** touches (measured this pass'
-pre-write; **158** once this pass's rewrite lands). Entry was
+`--oneline -- <path> | wc -l` → **158** touches (measured this pass'
+pre-write; **159** once this pass's rewrite lands). Entry was
 committed-clean this pass — worktree == HEAD == bot mirror, all
 `d7cd5fe758799f7de900bf91f093f0c7`, re-measured with `md5sum`; the only
 porcelain entries were the untracked `.scratch_p42/` and this pass's own new
@@ -86,12 +87,12 @@ unchanged, re-measured this pass with `stat`/`md5sum`); the consent-denied
 `rm -rf .scratch_p42` from the 42nd pass is not retried or routed around, and
 the directory is left for the manager to authorize. **No repo artifact was
 deleted this pass** — the probe's import-time `rmtree` of its own
-`/dev/shm/f13-pass140` scratch is the only removal by this pass's tooling; no
-ENOSPC occurred at any point (the root fs sat at 76 % with ≈108 G available at
+`/dev/shm/f13-pass141` scratch is the only removal by this pass's tooling; no
+ENOSPC occurred at any point (the root fs sat at 76 % with ≈107 G available at
 compose) and every write landed on the first attempt. The probe clone itself
 needed no deletion; the four-hunk delta was applied by this pass's builder
 (needle-count-asserted replacements) and verified with `diff` against the
-committed 139th probe before running. **Incident
+committed 140th probe before running. **Incident
 history (carried forward):** the 69th
 pass's first write attempt truncated the deliverable to 0 bytes when the host
 filesystem hit literal 0 bytes non-root-available mid-write; every deliverable
@@ -146,15 +147,17 @@ sites — lines 86, 140 and 308 — re-measured this pass), the 138th to
 sites — lines 86, 142 and 331 — re-measured this pass), the 139th to
 `/dev/shm/f13-pass139` (whose blob `fabf91a` carries `f13-pass139` at **two**
 sites — lines 146 and 342 — re-measured this pass, its line-88 leftover-scratch
-site having been left one pass stale at `f13-pass138`), and this pass then
-advances all three sites to `/dev/shm/f13-pass140`.
+site having been left one pass stale at `f13-pass138`), the 140th to
+`/dev/shm/f13-pass140` (whose blob `a907b80` carries `f13-pass140` at **three**
+sites — lines 89, 150 and 364 — re-measured this pass), and this pass then
+advances all three sites to `/dev/shm/f13-pass141`.
 
 Ordinal convention: the last *committed* revision titled itself the
-*one hundred and thirty-ninth* independent offload pass (`fabf91a`), so this
-pass is the **one hundred and fortieth** by that (the file's own preamble)
+*one hundred and fortieth* independent offload pass (`a907b80`), so this
+pass is the **one hundred and forty-first** by that (the file's own preamble)
 convention. The other candidate ordinal tokens are inapplicable rather than
 merely low. Measured this pass by line-grep on the pinned predecessor revision
-`fabf91a`, they read as SUBSTRING line counts `fleet offload queue` → 1,
+`a907b80`, they read as SUBSTRING line counts `fleet offload queue` → 1,
 `fleet offload` → 2, `offload queue` → 2, `offload-note` → 1 and
 `independent offload pass` → 3; the BACKTICKED counts on the same revision are
 1 / 1 / 1 / 1 / 1. Every hit sits inside the title, the token list, the
@@ -170,11 +173,11 @@ written backticked" and added "measured WITHOUT backticks the fourth token reads
 counts of the revision it scoped itself to, while the BACKTICKED counts on that
 same revision are 1 / 1 / 1 / 1 / 1. Re-measured this pass against the 126th
 revision's own pinned predecessor `afff5f4` and against this pass's pinned
-predecessor `fabf91a`: SUBSTRING 1 / 2 / 2 / 1 / 3 and BACKTICKED
+predecessor `a907b80`: SUBSTRING 1 / 2 / 2 / 1 / 3 and BACKTICKED
 1 / 1 / 1 / 1 / 1 on both — so the values the 110th printed are the SUBSTRING
 reading, mislabelled as the backticked one. The 112th replaced the sentence with
 convention-explicit values re-measured against its own pinned predecessor; this
-pass carries that form forward, re-measured against `fabf91a`.
+pass carries that form forward, re-measured against `a907b80`.
 
 **Correction (carried forward; first measured on the 102nd pass).** The 101st
 revision's version of the sentence above printed `0` against each of those four
@@ -192,12 +195,13 @@ POST digests are byte-equal), so the historical digits are recorded as history
 only — the acceptance runs are this pass's own POST transcript.
 
 **Prior-pass residuals re-measured this pass.** Every
-load-bearing figure in the 139th revision's preamble was re-derived from primary
-sources rather than carried: the entry blob and its md5 (`fabf91a` →
-`d7cd5fe758799f7de900bf91f093f0c7`, 678 lines / 45 072 B); the prior preamble's
-entry figure (`7637340` → `68eca256a1c0bc25f17ac53c0c241729`, 666 lines /
-44 346 B, re-confirmed); the probe's size, digest and four-hunk delta; this pass's own probe at
-29 178 B / md5 `2085f1904434f468557868a2a5dc3d3f` (measured post-clone); the
+load-bearing figure in the 140th revision's preamble was re-derived from primary
+sources rather than carried: the entry blob and its md5 (`a907b80` →
+`048479e187442cbaa68e78d2f14d9c3d`, 700 lines / 46 567 B); the prior preamble's
+entry figure (`fabf91a` → `d7cd5fe758799f7de900bf91f093f0c7`, 678 lines /
+45 072 B, re-confirmed); the probe's size, digest and four-hunk delta; this pass's own probe at
+29 180 B / md5 `d68ef918ae8425eb62ab4864921bf61a` (measured post-clone); the
+140th probe's 29 178 B / md5 `2085f1904434f468557868a2a5dc3d3f`; the
 139th probe's 29 187 B / md5 `00ec4d796e6bd243779b2934c956e781`; the
 138th probe's 29 190 B / md5 `f7616317399f0a194299833bdfbb735f`; the
 137th probe's 29 190 B / md5 `fd1537f1953904c20fb2daabf9c5859c`; the
@@ -216,20 +220,33 @@ counts on both pinned blobs; and the three named-adjacent artifact md5s. All
 held — so the finding vector is unchanged (F1 OK/LOW×3,
 F2 OK/MEDIUM×1+LOW×2, F3 OK/MEDIUM×1+LOW×4).
 
-**Correction (first measured on the 132nd pass; carried forward and widened).**
-The index-lock sentence below had,
+**Correction (first measured on the 132nd pass; carried forward, widened and
+re-corrected this pass).** The index-lock sentence below had,
 since the 125th revision, enumerated its no-lock window as starting at the
 122nd — silently dropping the 121st, which the 121st revision itself recorded
 (`and this 121st found none`) and the 124th revision still listed (`this 121st,
 122nd, 123rd and 124th found none`) before the 125th rewrote the window to
 `this 122nd, 123rd, 124th and 125th found none`. Measured this pass across the
-committed revisions, the 121st belongs in the no-lock set, so the window runs
-121st–139th (the 111th, 115th, 118th and 133rd found a stale lock; the 132nd
-found none), the 134th, 135th, 136th, 137th and 138th found none, and **this
-139th found none at all** — the
-operational note below records
-the window. Purely documentary — no finding body, no citation and no measured claim
-depends on it.
+committed blobs *themselves* (each revision's own contemporaneous clause, not
+the next pass's carried enumeration), the 121st belongs in the no-lock set, so
+the window runs 121st–141st; the stale-lock passes are the 111th, 115th, 118th,
+133rd **and 138th**, the 112th, 113rd, 116th, 117th, 119th and 120th found none,
+the 121st through 132nd found none, the 134th, 135th, 136th and 137th found
+none, the 139th found none, the 140th found none, and **this 141st found none at
+all**. **Correction (first measured on the 141st pass):** the 139th revision's
+version of this block listed the 138th among the passes that "found none" and
+advanced the closing clause to "this 139th found none at all"; measured on the
+138th's own blob (`7637340`), whose operational note reads "this 138th found one
+at entry and cleared it", the 138th DID take a stale lock at entry — the 139th
+records that correctly in its own operational note ("the 138th found one at
+entry and cleared it") while contradicting itself here. The 140th then carried
+the stale membership forward AND failed to advance the closing clause (its
+block still read "this 139th found none at all" while its operational note
+correctly read "this 140th found none"), and its operational note additionally
+shifted the enumeration by one — listing the 138th among the passes that found
+none while attributing the cleared stale lock to the 139th. Both defects are
+corrected above and in the operational note below. Purely documentary — no
+finding body, no citation and no measured claim depends on it.
 
 **Correction (first measured on the 130th pass; carried forward,
 re-measured this pass).** The chain
@@ -312,6 +329,18 @@ Documentary only — the NUMBERS are unaffected (SUBSTRING 1 / 2 / 2 / 1 / 3 and
 BACKTICKED 1 / 1 / 1 / 1 / 1 hold on `fabf91a` as on every blob since `584a713`)
 and the probe asserts no predecessor sha.
 
+**Correction (first measured on the 141st pass; verifies the 140th).** Measured
+this pass on the 140th blob (`a907b80`), `fabf91a` occurs at lines 47, 147, 153,
+157, 173, 177 and 196; of those, the token-SENTENCE measurement pointer (its
+line 157, "on the pinned predecessor revision `fabf91a`") and the
+token-CORRECTION pair (its line 173, "predecessor `fabf91a`: SUBSTRING…", and
+its line 177, "re-measured against `fabf91a`") all name `fabf91a`, which IS the
+140th's own pinned predecessor — so the 140th was clean in both families; this
+pass advances both families to `a907b80`. Documentary only — the NUMBERS are
+unaffected (SUBSTRING 1 / 2 / 2 / 1 / 3 and BACKTICKED 1 / 1 / 1 / 1 / 1 hold
+on `a907b80` as on every blob since `584a713`) and the probe asserts no
+predecessor sha.
+
 **Correction (first measured on the 124th pass; re-measured this pass).** The
 123rd revision's version of the paragraph above — and of the probe-description
 paragraph further down — printed `29 188 B` for the 123rd pass's own probe.
@@ -356,26 +385,26 @@ Verification performed this pass (all hermetic; scratch on `/dev/shm`, off
 `/tmp` and off the home filesystem): the script (829 lines), the 752-line
 deployed contract suite, the 1 172-line main suite and the 197-line stand-in doc
 were read end-to-end; the
-probe for this pass, `docs/reviews/routstr_f13_probes/probe_f13_pass140.py`
-(29 178 B, md5 `2085f1904434f468557868a2a5dc3d3f`), cloned with a four-hunk delta
-from the 139th pass's committed probe (md5
-`00ec4d796e6bd243779b2934c956e781`, 29 187 B; the delta touches exactly lines 2,
+probe for this pass, `docs/reviews/routstr_f13_probes/probe_f13_pass141.py`
+(29 180 B, md5 `d68ef918ae8425eb62ab4864921bf61a`), cloned with a four-hunk delta
+from the 140th pass's committed probe (md5
+`2085f1904434f468557868a2a5dc3d3f`, 29 178 B; the delta touches exactly lines 2,
 14–15, 48 and 576 — the docstring header
-line, the two PRE-leg note lines, `SCRATCH` → `/dev/shm/f13-pass140`, and the
+line, the two PRE-leg note lines, `SCRATCH` → `/dev/shm/f13-pass141`, and the
 ordinal literal) and
-verified with `diff` against the committed 139th probe before running —
+verified with `diff` against the committed 140th probe before running —
 exercising **238 checks** (A citation audit ×141 including 11 structural
 checks, B safety ×32, C confirmation ×25, D fail-safe ×35, E review-record
-integrity ×5). A PRE-write run against the 139th revision read **237/238**, its
+PRE-write run against the 140th revision read **237/238**, its
 single FAIL being `E:ordinal-preamble` (the file still carried the
-one hundred and thirty-ninth title), with transcript sha256
+one hundred and fortieth title), with transcript sha256
 `eec3a1ee9528de5f7da44e8483afa467b6ffc11f60596f155c4a9bfc06b50ae0` reproduced
 byte-identically across TWO consecutive runs — and byte-equal to the 42nd
-through 139th passes' own recorded PRE digests, because the boolean vector is
+through 140th passes' own recorded PRE digests, because the boolean vector is
 unchanged: no artifact and no finding body moved between those passes. The
 POST-write run reads **238/238**, zero FAIL lines, transcript sha256
 `0ad49bcb4f77f3956663c4c86a82621ca90bcd48880edec85e70756e23e0f1e4` (expected
-byte-equal to the 42nd–139th POST digests, and confirmed POST-run this pass).
+byte-equal to the 42nd–140th POST digests, and confirmed POST-run this pass).
 The ordinal
 check is POST-only by construction (it asserts line 1's ordinal word), so the
 pre-write FAIL is expected and disclosed, not a defect. The repo file is then
@@ -385,17 +414,17 @@ two copies' md5s are re-measured equal after the copy.
 Suite runs (this host's `os.fsync` can stall, so the main suite was run ALONE
 first; the two 25-case suites ran only after it) — all with `TMPDIR` off this
 host's `/tmp` tmpfs: repo main `python3 -m pytest tests/test_routstr_delist.py
--q` → **96 passed** (6.45 s); repo contract
+-q` → **96 passed** (0.67 s); repo contract
 `python3 -m pytest tests/test_routstr_delist_contract.py -q` → **25 passed**
-(0.34 s); the byte-identical deployed bot copy
-`~/.hermes/bot/tests/test_routstr_delist.py` → **25 passed** (0.45 s). Repo
+(0.28 s); the byte-identical deployed bot copy
+`~/.hermes/bot/tests/test_routstr_delist.py` → **25 passed** (1.17 s). Repo
 total 96 + 25 = **121 passed**. Every run used
 `PYTHONDONTWRITEBYTECODE=1` plus `-p no:cacheprovider` (with `TMPDIR` on
 `/dev/shm`) — the 75th pass's first attempt without them died ENOSPC writing
 bytecode caches onto the full root filesystem, a test-infrastructure failure,
 not a code regression. Point-in-time environment snapshot (`df`, re-measured
-this pass): `/` (`/dev/sda2`) 76 % — 108 G available at compose;
-`/dev/shm` 36 % — 2.0 G used; `/tmp` 24 % — 1.3 G used. These are
+this pass): `/` (`/dev/sda2`) 76 % — 107 G available at compose;
+`/dev/shm` 36 % — 2.0 G used; `/tmp` 25 % — 1.4 G used. These are
 volatile snapshots of a live host — re-measure, never carry them forward.
 
 Operational note: NO `.git/index.lock` was present at entry this pass (the
@@ -408,14 +437,15 @@ per `/proc/<pid>/cwd`, not this repo), and no file-descriptor holder in
 than carried — the
 111th, 115th, 118th and 133rd found a stale lock, the 112th, 113rd, 116th, 117th, 119th
 and 120th found none, the 121st through 132nd found none, the 133rd found one at
-entry and cleared it, the 134th, 135th, 136th, 137th and 138th found none, the
-139th found one at entry and cleared it, and **this 140th found none**. No consent
+entry and cleared it, the 134th, 135th, 136th and 137th found none, the 138th found
+one at entry and cleared it, the 139th found none, the 140th found none, and
+**this 141st found none**. No consent
 denial occurred this pass —
 every command ran in a sanctioned shape (`python3 <file>`, bounded listings,
 exact-path digests). No `rm -rf` was attempted — this pass pre-created its `TMPDIR` and never issued a deletion,
 so the 134th's `rm -rf` failure mode did not recur. The task body says
 "do not push unless instructed in the task body" and carries no push clause, so
-this pass commits locally only (precedent: the 38th through 139th passes).
+this pass commits locally only (precedent: the 38th through 140th passes).
 
 **Disclosed probe deviations (artifact correct in every case).** Section B
 re-executes the module's real payload builders against a live two-table SQLite
