@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.0.0",
+  "run_id": "rp5-20260914T1942Z",
+  "created_at": "2026-09-14T19:42:35Z",
+  "updated_at": "2026-09-14T19:47:35Z",
+  "config": {
+    "sample_window": {
+      "duration_s": 172800,
+      "refresh_interval_s": 300,
+      "stale_threshold_min": 30
+    },
+    "provider_set": ["ours", "friend", "ollama_cloud", "ppq", "deepinfra", "openrouter"],
+    "kill_switch_env": null
+  },
+  "sections": {
+    "first_measurements": {
+      "startup_ts": "2026-09-14T19:42:35Z",
+      "window_deadline_ts": "2026-09-14T20:12:35Z",
+      "entries": [
+        { "provider": "ours",         "first_measured_at": "2026-09-14T19:43:10Z", "within_window": true },
+        { "provider": "friend",       "first_measured_at": "2026-09-14T19:44:02Z", "within_window": true },
+        { "provider": "ollama_cloud", "first_measured_at": "2026-09-14T19:42:50Z", "within_window": true },
+        { "provider": "ppq",          "first_measured_at": "2026-09-14T19:45:21Z", "within_window": true },
+        { "provider": "deepinfra",    "first_measured_at": "2026-09-14T19:47:00Z", "within_window": true },
+        { "provider": "openrouter",   "first_measured_at": "2026-09-14T19:50:33Z", "within_window": true }
+      ]
+    },
+    "ollama_rate_series": [
+      {
+        "ts": "2026-09-14T19:47:35Z",
+        "measured_rate": 0.0155,
+        "target": 0.0155,
+        "tolerance": 0.10,
+        "source": "seed"
+      }
+    ],
+    "extra_usage_events": [
+      {
+        "ts": "2026-09-14T19:47:35Z",
+        "triggered": true,
+        "session_usage": 1.0,
+        "weekly_usage": 0.62,
+        "regime": "HIGH"
+      }
+    ],
+    "glm52_extra_rate_samples": [
+      {
+        "ts": "2026-09-14T19:47:35Z",
+        "active": true,
+        "extra_rate": 0.46,
+        "model": "glm-5.2"
+      }
+    ],
+    "anomaly_alerts": [
+      {
+        "ts": "2026-09-14T19:47:35Z",
+        "type": "stale",
+        "source": "routing_shadow_decisions",
+        "observed": 2451.0,
+        "threshold": 1800,
+        "detail": null
+      }
+    ],
+    "routing_parity_snapshot": {
+      "kill_switch": "OFF",
+      "expected_routing_fingerprint": "a15827d0d00c2fe5f10aa90a9ffb2c370fea94f565ccb7536327649a2524e3e7",
+      "rows": [
+        {
+          "requested_class": "default",
+          "chosen_provider": "zai",
+          "chosen_model": "glm-4.7",
+          "expected_provider": "zai",
+          "expected_model": "glm-4.7",
+          "parity": true,
+          "ts": "2026-09-14T19:47:35Z"
+        }
+      ],
+      "overall_parity": true
+    }
+  }
+}
